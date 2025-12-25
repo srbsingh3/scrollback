@@ -3,11 +3,11 @@
 ## Phase 0: Project Setup
 
 ### Setup Tasks
-- [ ] Initialize Chrome extension project structure
-  - [ ] Create `manifest.json` with minimal permissions (`activeTab`)
-  - [ ] Set up project directories (`src/`, `content/`, `platform-adapters/`)
-  - [ ] Configure build tools (if needed) or keep vanilla JS
-  - [ ] Create `.gitignore` for extension artifacts
+- [x] Initialize Chrome extension project structure
+  - [x] Create `manifest.json` with minimal permissions (`activeTab`)
+  - [x] Set up project directories (`src/`, `content/`, `platform-adapters/`)
+  - [x] Configure build tools (if needed) or keep vanilla JS
+  - [x] Create `.gitignore` for extension artifacts
 
 ### Documentation
 - [ ] Create README.md with project overview
