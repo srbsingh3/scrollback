@@ -43,6 +43,8 @@ class AnchorInjector {
       this.injectAnchorsForMessages(event.messages);
     } else if (event.type === 'removed') {
       this.removeAnchorsForMessages(event.messages);
+    } else if (event.type === 'updated') {
+      this.handleStreamingUpdates(event.messages);
     }
   }
 
@@ -119,6 +121,23 @@ class AnchorInjector {
       // Remove from tracking
       this.injectedAnchors.delete(element);
     }
+  }
+
+  /**
+   * Handle streaming updates for messages
+   * Updates the anchor generator's content cache for streaming messages
+   * @param {Array} messages - Array of updated message data objects
+   */
+  handleStreamingUpdates(messages) {
+    messages.forEach(messageData => {
+      const { element } = messageData;
+
+      // Update content cache in anchor generator
+      // This ensures the anchor ID remains stable even as content changes
+      if (this.anchorGenerator.hasContentChanged(element)) {
+        this.anchorGenerator.updateContentCache(element);
+      }
+    });
   }
 
   /**

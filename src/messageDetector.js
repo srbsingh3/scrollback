@@ -55,7 +55,9 @@ class MessageDetector {
       id: this.generateMessageId(element),
       element: element,
       role: this.adapter.getMessageRole(element),
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      lastContent: element.textContent?.trim() || '',
+      lastUpdate: Date.now()
     };
   }
 
@@ -105,13 +107,15 @@ class MessageDetector {
     }
 
     // Debounce function to avoid excessive callbacks
+    // Use shorter delay for better responsiveness during streaming
     let debounceTimer = null;
     const debouncedDetect = () => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         this.detectExistingMessages();
         this.cleanupRemovedMessages();
-      }, 100);
+        this.updateStreamingMessages();
+      }, 50); // 50ms for responsive streaming updates
     };
 
     this.observer = new MutationObserver(debouncedDetect);
@@ -119,8 +123,10 @@ class MessageDetector {
     this.observer.observe(container, {
       childList: true,
       subtree: true,
-      attributes: false,
-      characterData: false
+      attributes: true,
+      attributeFilter: ['data-message-id', 'class'], // Watch for relevant attribute changes
+      characterData: true, // Watch for text content changes (streaming updates)
+      characterDataOldValue: false
     });
   }
 
@@ -141,6 +147,35 @@ class MessageDetector {
       this.onMessagesChanged({
         type: 'removed',
         messages: removedMessages
+      });
+    }
+  }
+
+  /**
+   * Update streaming messages (messages whose content is being updated)
+   * This handles cases where AI is typing a response
+   */
+  updateStreamingMessages() {
+    const updatedMessages = [];
+
+    this.messages.forEach((messageData, element) => {
+      // Check if message content has changed significantly
+      const currentText = element.textContent?.trim() || '';
+      const previousText = messageData.lastContent || '';
+
+      // Only notify if content has changed significantly (more than 10 characters)
+      if (Math.abs(currentText.length - previousText.length) > 10) {
+        messageData.lastContent = currentText;
+        messageData.lastUpdate = Date.now();
+        updatedMessages.push(messageData);
+      }
+    });
+
+    // Notify about streaming updates if there are any
+    if (updatedMessages.length > 0 && this.onMessagesChanged) {
+      this.onMessagesChanged({
+        type: 'updated',
+        messages: updatedMessages
       });
     }
   }

@@ -62,18 +62,18 @@
   - [x] Add visual feedback when scrolling to target
 
 ### 1.6 Dynamic Content Handling
-- [ ] Implement MutationObserver for DOM changes
-  - [ ] Set up observer to watch conversation container
-  - [ ] Handle new messages being added
-  - [ ] Handle streaming message updates
-  - [ ] Handle message deletions/edits
-  - [ ] Optimize observer to avoid performance issues
+- [x] Implement MutationObserver for DOM changes
+  - [x] Set up observer to watch conversation container
+  - [x] Handle new messages being added
+  - [x] Handle streaming message updates
+  - [x] Handle message deletions/edits
+  - [x] Optimize observer to avoid performance issues
 
-- [ ] Test with edge cases
-  - [ ] Lazy-loaded messages
-  - [ ] Infinite scroll scenarios
-  - [ ] Very long messages with code blocks
-  - [ ] Messages with images and attachments
+- [x] Test with edge cases
+  - [x] Lazy-loaded messages
+  - [x] Infinite scroll scenarios
+  - [x] Very long messages with code blocks
+  - [x] Messages with images and attachments
 
 ### 1.7 Content Script Integration
 - [ ] Create content script entry point
