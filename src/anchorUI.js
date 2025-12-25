@@ -10,6 +10,7 @@ class AnchorUI {
     this.globalContainer = null;
     this.linesContainer = null;
     this.messageLines = new Map(); // anchorId -> line element
+    this.messageElements = new Map(); // anchorId -> message element
     this.clickHandlers = new Map(); // anchorId -> handler function
   }
 
@@ -65,11 +66,23 @@ class AnchorUI {
     line.setAttribute('aria-label', 'Navigate to message');
     line.setAttribute('tabindex', '0');
 
+    // Create preview tooltip
+    const preview = document.createElement('div');
+    preview.className = 'scrollback-anchor-preview';
+
+    // Extract message text content
+    const messageText = this.extractMessageText(messageElement);
+    preview.textContent = messageText;
+
+    // Add preview to line
+    line.appendChild(preview);
+
     // Add to container
     this.linesContainer.appendChild(line);
 
-    // Store reference
+    // Store references
     this.messageLines.set(anchorId, line);
+    this.messageElements.set(anchorId, messageElement);
     this.clickHandlers.set(anchorId, clickHandler);
 
     // Add click handler
@@ -79,6 +92,39 @@ class AnchorUI {
     this.updateVisibility();
 
     return line;
+  }
+
+  /**
+   * Extract text content from message element
+   * @param {Element} messageElement - Message DOM element
+   * @returns {string} Extracted text content
+   */
+  extractMessageText(messageElement) {
+    if (!messageElement) {
+      return 'Message preview unavailable';
+    }
+
+    // Try to find text content in nested structure
+    // Look for common text container patterns
+    let textContainer = messageElement.querySelector('.whitespace-pre-wrap') ||
+                       messageElement.querySelector('[data-message-author-role="user"]') ||
+                       messageElement;
+
+    // Get text content and clean it up
+    let text = textContainer.textContent || textContainer.innerText || '';
+
+    // Trim whitespace
+    text = text.trim();
+
+    // Truncate if too long (show first ~100 characters)
+    if (text.length > 100) {
+      text = text.substring(0, 100) + '...';
+    }
+
+    // Replace multiple whitespace/newlines with single space
+    text = text.replace(/\s+/g, ' ');
+
+    return text || 'Empty message';
   }
 
   /**
@@ -101,6 +147,7 @@ class AnchorUI {
       line.parentNode.removeChild(line);
     }
     this.messageLines.delete(anchorId);
+    this.messageElements.delete(anchorId);
     this.clickHandlers.delete(anchorId);
 
     // Hide container if no lines left
@@ -190,6 +237,7 @@ class AnchorUI {
       this.removeMessageLine(anchorId);
     });
     this.messageLines.clear();
+    this.messageElements.clear();
     this.clickHandlers.clear();
 
     // Remove global container
