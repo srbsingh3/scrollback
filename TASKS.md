@@ -129,11 +129,6 @@
   - [ ] Test with both light and dark modes on both platforms
   - [ ] Ensure visual consistency across platforms
 
-- [ ] Add accessibility improvements
-  - [ ] Add ARIA labels to anchors
-  - [ ] Ensure keyboard navigation works
-  - [ ] Test with screen readers
-
 ### 3.2 Performance Optimization
 - [ ] Profile extension performance
   - [ ] Measure hover interaction latency
