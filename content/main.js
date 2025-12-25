@@ -33,15 +33,26 @@
    * @returns {object|null} Platform adapter instance or null
    */
   function getPlatformAdapter(platform) {
+    let adapter = null;
+
     if (platform === 'chatgpt') {
-      return new ChatGPTAdapter();
+      adapter = new ChatGPTAdapter();
     } else if (platform === 'claude') {
       // Claude adapter not yet implemented
-      console.log('Claude adapter not yet implemented');
+      console.log('Scrollback: Claude adapter not yet implemented');
+      return null;
+    } else {
       return null;
     }
 
-    return null;
+    // Verify adapter compatibility before returning
+    if (adapter && adapter.isCompatible && adapter.isCompatible()) {
+      console.log(`Scrollback: ${adapter.getPlatformName()} adapter verified compatible`);
+      return adapter;
+    } else {
+      console.warn(`Scrollback: ${platform} adapter failed compatibility check`);
+      return null;
+    }
   }
 
   /**

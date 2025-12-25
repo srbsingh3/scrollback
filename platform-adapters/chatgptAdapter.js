@@ -3,7 +3,7 @@
  * Provides ChatGPT-specific DOM selectors and configuration
  */
 
-class ChatGPTAdapter {
+class ChatGPTAdapter extends BasePlatformAdapter {
   /**
    * Get the CSS selector for individual message elements
    * ChatGPT uses article elements with data-testid or specific classes
