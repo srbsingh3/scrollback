@@ -101,8 +101,8 @@ class ScrollNavigator {
   performScroll(targetPosition, options = {}) {
     return new Promise((resolve, reject) => {
       const behavior = options.behavior || 'smooth';
-      const duration = options.duration || 500;
       const scrollContainer = this.adapter.getScrollContainer();
+      const duration = options.duration || 200; // Fixed snappy duration
 
       console.log('ScrollNavigator: performScroll to', targetPosition, 'using container:', scrollContainer);
 
