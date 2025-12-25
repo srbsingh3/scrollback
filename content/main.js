@@ -18,12 +18,12 @@
     ['chatgpt.com', 'chat.openai.com']
   );
 
-  // Claude adapter will be registered when implemented
-  // platformRouter.registerAdapter(
-  //   'claude',
-  //   () => new ClaudeAdapter(),
-  //   ['claude.ai']
-  // );
+  // Register Claude adapter
+  platformRouter.registerAdapter(
+    'claude',
+    () => new ClaudeAdapter(),
+    ['claude.ai']
+  );
 
   /**
    * Initialize the Scrollback extension
