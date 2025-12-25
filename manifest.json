@@ -17,6 +17,7 @@
       "js": [
         "platform-adapters/baseAdapter.js",
         "platform-adapters/chatgptAdapter.js",
+        "src/platformRouter.js",
         "src/messageDetector.js",
         "src/anchorGenerator.js",
         "src/anchorUI.js",

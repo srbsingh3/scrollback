@@ -8,74 +8,45 @@
 
   console.log('Scrollback extension loaded');
 
-  // Import required modules by adding script tags
-  // Since we're using vanilla JS without a bundler, we need to ensure scripts are loaded
+  // Create and configure platform router
+  const platformRouter = new PlatformRouter();
 
-  /**
-   * Detect the current platform based on URL
-   * @returns {string|null} Platform name or null if unsupported
-   */
-  function detectPlatform() {
-    const hostname = window.location.hostname;
+  // Register available platform adapters
+  platformRouter.registerAdapter(
+    'chatgpt',
+    () => new ChatGPTAdapter(),
+    ['chatgpt.com', 'chat.openai.com']
+  );
 
-    if (hostname.includes('chatgpt.com')) {
-      return 'chatgpt';
-    } else if (hostname.includes('claude.ai')) {
-      return 'claude';
-    }
-
-    return null;
-  }
-
-  /**
-   * Get the appropriate platform adapter
-   * @param {string} platform - Platform name
-   * @returns {object|null} Platform adapter instance or null
-   */
-  function getPlatformAdapter(platform) {
-    let adapter = null;
-
-    if (platform === 'chatgpt') {
-      adapter = new ChatGPTAdapter();
-    } else if (platform === 'claude') {
-      // Claude adapter not yet implemented
-      console.log('Scrollback: Claude adapter not yet implemented');
-      return null;
-    } else {
-      return null;
-    }
-
-    // Verify adapter compatibility before returning
-    if (adapter && adapter.isCompatible && adapter.isCompatible()) {
-      console.log(`Scrollback: ${adapter.getPlatformName()} adapter verified compatible`);
-      return adapter;
-    } else {
-      console.warn(`Scrollback: ${platform} adapter failed compatibility check`);
-      return null;
-    }
-  }
+  // Claude adapter will be registered when implemented
+  // platformRouter.registerAdapter(
+  //   'claude',
+  //   () => new ClaudeAdapter(),
+  //   ['claude.ai']
+  // );
 
   /**
    * Initialize the Scrollback extension
    */
   function initialize() {
-    // Detect platform
-    const platform = detectPlatform();
+    console.log('Scrollback: Starting initialization...');
 
-    if (!platform) {
-      console.log('Scrollback: Unsupported platform');
+    // Check if platform is supported
+    if (!platformRouter.isSupported()) {
+      console.log('Scrollback: Unsupported platform - extension will not run');
+      console.log(`Scrollback: Supported platforms: ${platformRouter.getSupportedPlatforms().join(', ')}`);
       return;
     }
-
-    console.log(`Scrollback: Detected platform - ${platform}`);
 
     // Get platform adapter
-    const adapter = getPlatformAdapter(platform);
+    const adapter = platformRouter.getAdapter();
 
     if (!adapter) {
-      console.log('Scrollback: No adapter available for platform');
+      console.log('Scrollback: Failed to get platform adapter');
       return;
     }
+
+    console.log(`Scrollback: Platform detected - ${adapter.getPlatformName()}`);
 
     // Wait for the conversation container to be available
     const containerSelector = adapter.getContainerSelector();
@@ -91,6 +62,7 @@
     // Timeout after 10 seconds
     setTimeout(() => {
       clearInterval(waitForContainer);
+      console.log('Scrollback: Timeout waiting for conversation container');
     }, 10000);
   }
 
@@ -123,6 +95,7 @@
 
       // Store reference globally for debugging
       window.__scrollback = {
+        router: platformRouter,
         injector: anchorInjector,
         detector: messageDetector,
         generator: anchorGenerator,

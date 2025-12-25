@@ -112,11 +112,11 @@
   - [ ] Theme detection for Claude
 
 ### 2.4 Platform Router
-- [ ] Create platform routing logic
-  - [ ] Detect current platform by URL/hostname
-  - [ ] Load appropriate adapter
-  - [ ] Fall back gracefully if platform unsupported
-  - [ ] Test switching between platforms
+- [x] Create platform routing logic
+  - [x] Detect current platform by URL/hostname
+  - [x] Load appropriate adapter
+  - [x] Fall back gracefully if platform unsupported
+  - [x] Test switching between platforms
 
 ---
 
