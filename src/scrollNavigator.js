@@ -16,21 +16,33 @@ class ScrollNavigator {
    * @param {object} options - Scroll options
    */
   scrollToMessage(messageElement, options = {}) {
+    console.log('ScrollNavigator: scrollToMessage called', messageElement);
+
     if (!messageElement || !document.contains(messageElement)) {
       console.warn('ScrollNavigator: Invalid message element');
       return;
     }
 
+    // Reset scroll lock if it's been too long (safety valve)
+    if (this.isScrolling && this.scrollStartTime && (Date.now() - this.scrollStartTime > 3000)) {
+      console.log('ScrollNavigator: Resetting stale scroll lock');
+      this.isScrolling = false;
+    }
+
     // Prevent multiple simultaneous scrolls
     if (this.isScrolling) {
+      console.log('ScrollNavigator: Already scrolling, skipping');
       return;
     }
+
+    this.scrollStartTime = Date.now();
 
     this.isScrolling = true;
     this.lastScrollTarget = messageElement;
 
     // Calculate scroll position
     const scrollPosition = this.calculateScrollPosition(messageElement);
+    console.log('ScrollNavigator: Calculated scroll position:', scrollPosition);
 
     // Add visual feedback before scrolling
     this.addScrollFeedback(messageElement);
@@ -57,18 +69,27 @@ class ScrollNavigator {
    * @returns {number} Scroll position in pixels
    */
   calculateScrollPosition(messageElement) {
-    // Get element position
-    const elementRect = messageElement.getBoundingClientRect();
+    const scrollContainer = this.adapter.getScrollContainer();
     const scrollOffset = this.adapter.calculateScrollOffset();
 
-    // Calculate absolute position from top of document
-    const currentScrollY = window.scrollY || window.pageYOffset;
-    const absoluteTop = elementRect.top + currentScrollY;
+    const elementRect = messageElement.getBoundingClientRect();
+    console.log('Element rect:', elementRect);
+    console.log('Scroll offset:', scrollOffset);
 
-    // Target position with offset for fixed headers
-    const targetPosition = absoluteTop - scrollOffset;
-
-    return Math.max(0, targetPosition);
+    if (scrollContainer === window) {
+      // Window scrolling
+      const currentScrollY = window.scrollY || window.pageYOffset;
+      const absoluteTop = elementRect.top + currentScrollY;
+      console.log('Window scroll - currentScrollY:', currentScrollY, 'absoluteTop:', absoluteTop);
+      return Math.max(0, absoluteTop - scrollOffset);
+    } else {
+      // Container scrolling
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const currentScrollTop = scrollContainer.scrollTop;
+      const relativeTop = elementRect.top - containerRect.top + currentScrollTop;
+      console.log('Container scroll - containerRect:', containerRect, 'scrollTop:', currentScrollTop, 'relativeTop:', relativeTop);
+      return Math.max(0, relativeTop - scrollOffset);
+    }
   }
 
   /**
@@ -81,22 +102,28 @@ class ScrollNavigator {
     return new Promise((resolve, reject) => {
       const behavior = options.behavior || 'smooth';
       const duration = options.duration || 500;
+      const scrollContainer = this.adapter.getScrollContainer();
 
-      if (behavior === 'smooth' && 'scrollTo' in window) {
-        // Use native smooth scroll
-        window.scrollTo({
+      console.log('ScrollNavigator: performScroll to', targetPosition, 'using container:', scrollContainer);
+
+      if (behavior === 'smooth' && 'scrollTo' in scrollContainer) {
+        // Use native smooth scroll on the appropriate container
+        scrollContainer.scrollTo({
           top: targetPosition,
           left: 0,
           behavior: 'smooth'
         });
 
         // Wait for scroll to complete
-        // Native smooth scroll doesn't provide a completion callback
         setTimeout(resolve, duration);
 
       } else {
         // Fallback to instant scroll
-        window.scrollTo(0, targetPosition);
+        if (scrollContainer === window) {
+          window.scrollTo(0, targetPosition);
+        } else {
+          scrollContainer.scrollTop = targetPosition;
+        }
         resolve();
       }
     });

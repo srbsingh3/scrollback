@@ -1,147 +1,151 @@
 /**
  * Anchor UI Module
- * Creates and manages Notion-style anchor indicators for messages
+ * Creates and manages a global sticky Notion-style anchor indicator
+ * with one line per message for navigation
  */
 
 class AnchorUI {
   constructor(platformAdapter) {
     this.adapter = platformAdapter;
-    this.anchors = new Map(); // anchor ID -> anchor element
+    this.globalContainer = null;
+    this.linesContainer = null;
+    this.messageLines = new Map(); // anchorId -> line element
+    this.clickHandlers = new Map(); // anchorId -> handler function
   }
 
   /**
-   * Create an anchor element for a message
+   * Initialize the global sticky anchor container
+   */
+  initialize() {
+    if (this.globalContainer) {
+      return; // Already initialized
+    }
+
+    // Create global sticky container
+    this.globalContainer = document.createElement('div');
+    this.globalContainer.className = 'scrollback-global-anchor';
+    this.globalContainer.setAttribute('role', 'navigation');
+    this.globalContainer.setAttribute('aria-label', 'Message navigation');
+
+    // Create lines container
+    this.linesContainer = document.createElement('div');
+    this.linesContainer.className = 'scrollback-anchor-lines';
+
+    this.globalContainer.appendChild(this.linesContainer);
+
+    // Apply theme
+    this.applyTheme();
+
+    // Inject into document
+    document.body.appendChild(this.globalContainer);
+
+    console.log('Global anchor container initialized');
+  }
+
+  /**
+   * Add a line for a new message
    * @param {string} anchorId - Unique anchor ID
    * @param {Element} messageElement - Message DOM element
-   * @returns {Element} Anchor element
+   * @param {Function} clickHandler - Click handler for this line
    */
-  createAnchor(anchorId, messageElement) {
-    // Check if anchor already exists
-    if (this.anchors.has(anchorId)) {
-      return this.anchors.get(anchorId);
+  addMessageLine(anchorId, messageElement, clickHandler) {
+    // Ensure global container exists
+    if (!this.globalContainer) {
+      this.initialize();
     }
 
-    // Create anchor container
-    const anchor = document.createElement('div');
-    anchor.className = 'scrollback-anchor';
-    anchor.setAttribute('data-anchor-id', anchorId);
-    anchor.setAttribute('role', 'button');
-    anchor.setAttribute('aria-label', 'Scroll to this message');
-    anchor.setAttribute('tabindex', '0');
-
-    // Create horizontal lines (Notion-style)
-    const linesContainer = document.createElement('div');
-    linesContainer.className = 'scrollback-anchor-lines';
-
-    // Create 4 horizontal lines
-    for (let i = 0; i < 4; i++) {
-      const line = document.createElement('div');
-      line.className = 'scrollback-anchor-line';
-      linesContainer.appendChild(line);
+    // Check if line already exists
+    if (this.messageLines.has(anchorId)) {
+      return this.messageLines.get(anchorId);
     }
 
-    anchor.appendChild(linesContainer);
+    // Create line element
+    const line = document.createElement('div');
+    line.className = 'scrollback-anchor-line';
+    line.setAttribute('data-anchor-id', anchorId);
+    line.setAttribute('role', 'button');
+    line.setAttribute('aria-label', 'Navigate to message');
+    line.setAttribute('tabindex', '0');
 
-    // Apply theme-aware styling
-    this.applyTheme(anchor);
+    // Add to container
+    this.linesContainer.appendChild(line);
 
     // Store reference
-    this.anchors.set(anchorId, anchor);
+    this.messageLines.set(anchorId, line);
+    this.clickHandlers.set(anchorId, clickHandler);
 
-    return anchor;
+    // Add click handler
+    this.addClickHandler(line, clickHandler);
+
+    return line;
   }
 
   /**
-   * Apply theme-aware styling to an anchor
-   * @param {Element} anchor - Anchor element
+   * Remove a line for a deleted message
+   * @param {string} anchorId - Anchor ID
    */
-  applyTheme(anchor) {
-    const theme = this.adapter.detectTheme();
-    anchor.setAttribute('data-theme', theme);
+  removeMessageLine(anchorId) {
+    const line = this.messageLines.get(anchorId);
+    if (line && line.parentNode) {
+      line.parentNode.removeChild(line);
+    }
+    this.messageLines.delete(anchorId);
+    this.clickHandlers.delete(anchorId);
 
-    // Theme-specific classes will be handled by CSS
-    if (theme === 'dark') {
-      anchor.classList.add('scrollback-anchor-dark');
-      anchor.classList.remove('scrollback-anchor-light');
+    // Hide container if no lines left
+    this.updateVisibility();
+  }
+
+  /**
+   * Update visibility of global container based on message count
+   */
+  updateVisibility() {
+    if (!this.globalContainer) return;
+
+    // Hide if no messages, show otherwise
+    if (this.messageLines.size === 0) {
+      this.globalContainer.style.display = 'none';
     } else {
-      anchor.classList.add('scrollback-anchor-light');
-      anchor.classList.remove('scrollback-anchor-dark');
+      this.globalContainer.style.display = 'flex';
     }
   }
 
   /**
-   * Inject anchor into the DOM next to a message
-   * @param {Element} anchor - Anchor element
-   * @param {Element} messageElement - Message element
+   * Apply theme-aware styling
    */
-  injectAnchor(anchor, messageElement) {
-    // Ensure message element has relative positioning
-    const computedStyle = window.getComputedStyle(messageElement);
-    if (computedStyle.position === 'static') {
-      messageElement.style.position = 'relative';
+  applyTheme() {
+    if (!this.globalContainer) return;
+
+    const theme = this.adapter.detectTheme();
+    this.globalContainer.setAttribute('data-theme', theme);
+
+    // Theme-specific classes
+    if (theme === 'dark') {
+      this.globalContainer.classList.add('scrollback-anchor-dark');
+      this.globalContainer.classList.remove('scrollback-anchor-light');
+    } else {
+      this.globalContainer.classList.add('scrollback-anchor-light');
+      this.globalContainer.classList.remove('scrollback-anchor-dark');
     }
-
-    // Get positioning configuration from adapter
-    const position = this.adapter.getAnchorPosition();
-
-    // Set anchor position
-    anchor.style.position = 'absolute';
-    anchor.style[position.side] = `${position.offset}px`;
-    anchor.style.top = `${position.topOffset}px`;
-
-    // Append anchor to message element
-    messageElement.appendChild(anchor);
   }
 
   /**
-   * Remove an anchor from the DOM
-   * @param {string} anchorId - Anchor ID
+   * Update theme for the global container
    */
-  removeAnchor(anchorId) {
-    const anchor = this.anchors.get(anchorId);
-    if (anchor && anchor.parentNode) {
-      anchor.parentNode.removeChild(anchor);
-    }
-    this.anchors.delete(anchorId);
+  updateTheme() {
+    this.applyTheme();
   }
 
   /**
-   * Update theme for all anchors (when theme changes)
-   */
-  updateAllAnchorsTheme() {
-    this.anchors.forEach(anchor => {
-      this.applyTheme(anchor);
-    });
-  }
-
-  /**
-   * Get anchor element by ID
-   * @param {string} anchorId - Anchor ID
-   * @returns {Element|null} Anchor element or null
-   */
-  getAnchorElement(anchorId) {
-    return this.anchors.get(anchorId) || null;
-  }
-
-  /**
-   * Check if anchor exists
-   * @param {string} anchorId - Anchor ID
-   * @returns {boolean} True if anchor exists
-   */
-  hasAnchor(anchorId) {
-    return this.anchors.has(anchorId);
-  }
-
-  /**
-   * Add click handler to an anchor
-   * @param {Element} anchor - Anchor element
+   * Add click handler to a line
+   * @param {Element} line - Line element
    * @param {Function} handler - Click handler function
    */
-  addClickHandler(anchor, handler) {
-    anchor.addEventListener('click', handler);
+  addClickHandler(line, handler) {
+    line.addEventListener('click', handler);
 
     // Add keyboard support
-    anchor.addEventListener('keydown', (e) => {
+    line.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         handler(e);
@@ -150,21 +154,105 @@ class AnchorUI {
   }
 
   /**
-   * Remove all anchors and clear state
+   * Get line element by anchor ID
+   * @param {string} anchorId - Anchor ID
+   * @returns {Element|null} Line element or null
    */
-  clear() {
-    this.anchors.forEach((anchor, anchorId) => {
-      this.removeAnchor(anchorId);
-    });
-    this.anchors.clear();
+  getLineElement(anchorId) {
+    return this.messageLines.get(anchorId) || null;
   }
 
   /**
-   * Get count of active anchors
-   * @returns {number} Number of anchors
+   * Check if line exists for anchor ID
+   * @param {string} anchorId - Anchor ID
+   * @returns {boolean} True if line exists
+   */
+  hasLine(anchorId) {
+    return this.messageLines.has(anchorId);
+  }
+
+  /**
+   * Remove all lines and clear state
+   */
+  clear() {
+    this.messageLines.forEach((line, anchorId) => {
+      this.removeMessageLine(anchorId);
+    });
+    this.messageLines.clear();
+    this.clickHandlers.clear();
+
+    // Remove global container
+    if (this.globalContainer && this.globalContainer.parentNode) {
+      this.globalContainer.parentNode.removeChild(this.globalContainer);
+    }
+    this.globalContainer = null;
+    this.linesContainer = null;
+  }
+
+  /**
+   * Get count of message lines
+   * @returns {number} Number of lines
+   */
+  getLineCount() {
+    return this.messageLines.size;
+  }
+
+  /**
+   * Legacy compatibility method (used by anchorInjector)
+   * @deprecated Use addMessageLine instead
+   */
+  createAnchor(anchorId, messageElement) {
+    // This is called by anchorInjector but we handle it differently now
+    // Return a placeholder that won't be used
+    return document.createElement('div');
+  }
+
+  /**
+   * Legacy compatibility method (used by anchorInjector)
+   * @deprecated No longer needed with global container
+   */
+  injectAnchor(anchor, messageElement) {
+    // No-op - we use global container now
+  }
+
+  /**
+   * Legacy compatibility method (used by anchorInjector)
+   * @deprecated Use removeMessageLine instead
+   */
+  removeAnchor(anchorId) {
+    this.removeMessageLine(anchorId);
+  }
+
+  /**
+   * Legacy compatibility method (used by anchorInjector)
+   * @deprecated Use getLineElement instead
+   */
+  getAnchorElement(anchorId) {
+    return this.getLineElement(anchorId);
+  }
+
+  /**
+   * Legacy compatibility method (used by anchorInjector)
+   * @deprecated Use hasLine instead
+   */
+  hasAnchor(anchorId) {
+    return this.hasLine(anchorId);
+  }
+
+  /**
+   * Legacy compatibility method (used by anchorInjector)
+   * @deprecated Use getLineCount instead
    */
   getAnchorCount() {
-    return this.anchors.size;
+    return this.getLineCount();
+  }
+
+  /**
+   * Legacy compatibility method (used by anchorInjector)
+   * @deprecated Use updateTheme instead
+   */
+  updateAllAnchorsTheme() {
+    this.updateTheme();
   }
 }
 

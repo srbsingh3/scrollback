@@ -116,6 +116,17 @@ class BasePlatformAdapter {
   }
 
   /**
+   * Get the scrollable container element for navigation
+   * This is the element that should be scrolled when navigating to messages
+   * May be different from the conversation container
+   *
+   * @returns {Element|Window} Scrollable element (defaults to window)
+   */
+  getScrollContainer() {
+    return window;
+  }
+
+  /**
    * Validate that the adapter is compatible with the current page
    * Checks if required DOM elements exist
    *

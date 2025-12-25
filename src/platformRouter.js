@@ -93,10 +93,13 @@ class PlatformRouter {
         return null;
       }
 
-      // Verify adapter compatibility
+      // Verify adapter compatibility (non-blocking)
+      // Note: This check may fail if the page hasn't fully loaded yet
+      // The main.js initialization will wait for the container to be available
       if (adapter.isCompatible && !adapter.isCompatible()) {
-        console.warn(`PlatformRouter: Adapter ${platform} failed compatibility check`);
-        return null;
+        console.log(`PlatformRouter: Adapter ${platform} compatibility check pending (page may still be loading)`);
+        // Don't return null - let the initialization continue
+        // The container wait logic in main.js will handle this properly
       }
 
       // Cache the adapter

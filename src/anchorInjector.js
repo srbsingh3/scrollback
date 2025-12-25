@@ -26,6 +26,9 @@ class AnchorInjector {
     this.anchorUI = anchorUI;
     this.scrollNavigator = scrollNavigator;
 
+    // Initialize the global anchor UI container
+    this.anchorUI.initialize();
+
     // Set up message change listener
     this.messageDetector.initialize((event) => {
       this.handleMessagesChanged(event);
@@ -71,22 +74,26 @@ class AnchorInjector {
     }
 
     try {
+      // Check message role - only create lines for USER messages
+      const messageRole = this.adapter.getMessageRole(element);
+
+      if (messageRole !== 'user') {
+        // Skip non-user messages (assistant responses, system messages, etc.)
+        return;
+      }
+
       // Generate or get existing anchor ID
       const anchorId = this.anchorGenerator.getOrCreateAnchorId(element);
 
-      // Create anchor element
-      const anchorElement = this.anchorUI.createAnchor(anchorId, element);
-
-      // Inject anchor into DOM
-      this.anchorUI.injectAnchor(anchorElement, element);
+      // Add a line to the global anchor UI for this USER message
+      this.anchorUI.addMessageLine(anchorId, element, () => {
+        this.handleAnchorClick(anchorId, element);
+      });
 
       // Store reference
       this.injectedAnchors.set(element, anchorId);
 
-      // Add click handler for navigation (will be implemented in Task 1.5)
-      this.anchorUI.addClickHandler(anchorElement, () => {
-        this.handleAnchorClick(anchorId, element);
-      });
+      console.log(`AnchorInjector: Added line for user message (${this.injectedAnchors.size} total user messages)`);
 
     } catch (error) {
       console.warn('Failed to inject anchor for message:', error);

@@ -86,13 +86,6 @@
 
       console.log('Scrollback: Extension initialized successfully');
 
-      // Optional: Log stats periodically for debugging
-      if (process?.env?.NODE_ENV === 'development') {
-        setInterval(() => {
-          console.log('Scrollback stats:', anchorInjector.getStats());
-        }, 5000);
-      }
-
       // Store reference globally for debugging
       window.__scrollback = {
         router: platformRouter,

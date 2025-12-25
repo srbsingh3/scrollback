@@ -10,14 +10,9 @@ class ChatGPTAdapter extends BasePlatformAdapter {
    * @returns {string} CSS selector
    */
   getMessageSelector() {
-    // ChatGPT message structure: article elements or divs with specific attributes
-    // We use a combination of selectors for robustness
-    return [
-      'article[data-testid^="conversation-turn"]',
-      'div[data-message-author-role]',
-      '.group.w-full.text-token-text-primary',
-      'main > div > div > div > div'
-    ].join(', ');
+    // ChatGPT message structure: article elements with data-turn attribute
+    // This selects both user and assistant turns
+    return 'article[data-testid^="conversation-turn"]';
   }
 
   /**
@@ -72,6 +67,43 @@ class ChatGPTAdapter extends BasePlatformAdapter {
   }
 
   /**
+   * Get the scrollable container element for navigation
+   * ChatGPT uses an internal scrollable div, not the window
+   * @returns {Element|Window} Scrollable element
+   */
+  getScrollContainer() {
+    // ChatGPT's scroll container is a DIV with overflow-y: auto
+    // Look for scrollable elements that contain conversation messages
+    const scrollables = Array.from(document.querySelectorAll('main, div')).filter(el => {
+      const style = window.getComputedStyle(el);
+      return (style.overflowY === 'auto' || style.overflowY === 'scroll') &&
+             el.scrollHeight > el.clientHeight;
+    });
+
+    console.log('Found scrollable containers:', scrollables.length, scrollables);
+
+    // Find the one that contains conversation articles
+    for (const container of scrollables) {
+      if (container.querySelector('article[data-testid^="conversation-turn"]')) {
+        console.log('ScrollContainer found (contains articles):', container);
+        return container;
+      }
+    }
+
+    // If no container with articles, use the largest scrollable
+    if (scrollables.length > 0) {
+      const largest = scrollables.reduce((max, el) =>
+        el.clientHeight > max.clientHeight ? el : max
+      );
+      console.log('ScrollContainer using largest:', largest);
+      return largest;
+    }
+
+    console.log('ScrollContainer: falling back to window');
+    return window;
+  }
+
+  /**
    * Get platform name
    * @returns {string} Platform name
    */
@@ -112,24 +144,31 @@ class ChatGPTAdapter extends BasePlatformAdapter {
    * @returns {'user' | 'assistant' | 'unknown'} Message author role
    */
   getMessageRole(element) {
+    // Check for data-turn attribute on article elements
+    const dataTurn = element.getAttribute('data-turn');
+    if (dataTurn) {
+      return dataTurn === 'user' ? 'user' : 'assistant';
+    }
+
     // Check for data-message-author-role attribute
     const role = element.getAttribute('data-message-author-role');
     if (role) {
       return role === 'user' ? 'user' : 'assistant';
     }
 
-    // Check for class-based indicators
-    if (element.classList.contains('user-message') ||
+    // Check for user-message-bubble-color class (user messages)
+    if (element.classList.contains('user-message-bubble-color') ||
+        element.querySelector('.user-message-bubble-color')) {
+      return 'user';
+    }
+
+    // Check for nested data-turn or data-message-author-role
+    if (element.querySelector('[data-turn="user"]') ||
         element.querySelector('[data-message-author-role="user"]')) {
       return 'user';
     }
 
-    if (element.classList.contains('assistant-message') ||
-        element.querySelector('[data-message-author-role="assistant"]')) {
-      return 'assistant';
-    }
-
-    return 'unknown';
+    return 'assistant';
   }
 }
 
