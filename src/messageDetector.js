@@ -26,7 +26,10 @@ class MessageDetector {
    */
   detectExistingMessages() {
     const selector = this.adapter.getMessageSelector();
+    console.log('[MessageDetector] Detecting messages with selector:', selector);
+
     const elements = document.querySelectorAll(selector);
+    console.log('[MessageDetector] Found elements:', elements.length, '| Already tracked:', this.messages.size);
 
     const newMessages = [];
     elements.forEach(element => {
@@ -37,11 +40,16 @@ class MessageDetector {
       }
     });
 
+    console.log('[MessageDetector] New messages to add:', newMessages.length);
+
     if (newMessages.length > 0 && this.onMessagesChanged) {
+      console.log('[MessageDetector] Calling onMessagesChanged callback with', newMessages.length, 'messages');
       this.onMessagesChanged({
         type: 'added',
         messages: newMessages
       });
+    } else {
+      console.log('[MessageDetector] No new messages to process');
     }
   }
 
@@ -99,12 +107,16 @@ class MessageDetector {
    */
   setupObserver() {
     const containerSelector = this.adapter.getContainerSelector();
+    console.log('[MessageDetector] Setting up observer for container:', containerSelector);
+
     const container = document.querySelector(containerSelector);
 
     if (!container) {
-      console.warn('Scrollback: Could not find conversation container');
+      console.warn('[MessageDetector] ❌ Could not find conversation container!');
       return;
     }
+
+    console.log('[MessageDetector] ✅ Container found, setting up MutationObserver');
 
     // Debounce function to avoid excessive callbacks
     // Use shorter delay for better responsiveness during streaming
@@ -112,6 +124,7 @@ class MessageDetector {
     const debouncedDetect = () => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
+        console.log('[MessageDetector] MutationObserver triggered - detecting messages');
         this.detectExistingMessages();
         this.cleanupRemovedMessages();
         this.updateStreamingMessages();
@@ -128,6 +141,8 @@ class MessageDetector {
       characterData: true, // Watch for text content changes (streaming updates)
       characterDataOldValue: false
     });
+
+    console.log('[MessageDetector] Observer is now active');
   }
 
   /**
@@ -195,6 +210,26 @@ class MessageDetector {
    */
   getMessageByElement(element) {
     return this.messages.get(element) || null;
+  }
+
+  /**
+   * Clear all tracked messages and reset the observer
+   * Useful when switching chats to reset state
+   */
+  clearMessages() {
+    console.log('[MessageDetector] 🔄 Clearing all tracked messages and resetting observer');
+    console.log('[MessageDetector] Previous tracked messages:', this.messages.size);
+    this.messages.clear();
+
+    // Disconnect and reconnect the observer to ensure it's watching the correct container
+    if (this.observer) {
+      console.log('[MessageDetector] Disconnecting old observer');
+      this.observer.disconnect();
+      console.log('[MessageDetector] Reconnecting observer to new container');
+      this.setupObserver();
+    } else {
+      console.warn('[MessageDetector] ⚠️ No observer to disconnect!');
+    }
   }
 
   /**

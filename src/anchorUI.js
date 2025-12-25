@@ -77,6 +77,9 @@ class AnchorUI {
     // Add click handler
     this.addClickHandler(line, clickHandler);
 
+    // Update visibility to ensure container is shown
+    this.updateVisibility();
+
     return line;
   }
 

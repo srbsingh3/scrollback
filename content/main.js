@@ -111,43 +111,75 @@
    */
   function setupNavigationListener(anchorInjector) {
     let lastUrl = location.href;
+    console.log('Scrollback: setupNavigationListener called with URL:', lastUrl);
+    console.log('Scrollback: anchorInjector available:', !!anchorInjector);
 
-    // Use a MutationObserver to detect URL changes in SPAs
-    const observer = new MutationObserver(() => {
-      if (location.href !== lastUrl) {
-        console.log('Scrollback: URL changed, reinitializing anchors...', {
+    // Function to handle URL changes
+    const handleUrlChange = () => {
+      const currentUrl = location.href;
+      console.log('Scrollback: handleUrlChange called', {
+        lastUrl: lastUrl,
+        currentUrl: currentUrl,
+        changed: currentUrl !== lastUrl
+      });
+
+      if (currentUrl !== lastUrl) {
+        console.log('🔄 Scrollback: URL CHANGED! Reinitializing anchors...', {
           from: lastUrl,
-          to: location.href
+          to: currentUrl
         });
 
-        lastUrl = location.href;
+        lastUrl = currentUrl;
 
         // Clear existing anchors and reinitialize detection
         // Give the SPA time to update the DOM
+        console.log('Scrollback: Setting 800ms timeout for reinitialization...');
         setTimeout(() => {
+          console.log('Scrollback: Timeout complete, executing reinitialization...');
           if (anchorInjector) {
+            console.log('Scrollback: Calling clearAllAnchors...');
             anchorInjector.clearAllAnchors();
+
+            console.log('Scrollback: Calling detectExistingMessages...');
             anchorInjector.messageDetector.detectExistingMessages();
+
+            console.log('Scrollback: Reinitialization complete. Stats:', anchorInjector.getStats());
+          } else {
+            console.error('Scrollback: anchorInjector is null/undefined!');
           }
-        }, 500);
+        }, 800);
+      }
+    };
+
+    // Intercept pushState and replaceState for SPA navigation
+    const originalPushState = history.pushState;
+    const originalReplaceState = history.replaceState;
+
+    history.pushState = function(...args) {
+      console.log('Scrollback: pushState called', args);
+      originalPushState.apply(this, args);
+      handleUrlChange();
+    };
+
+    history.replaceState = function(...args) {
+      console.log('Scrollback: replaceState called', args);
+      originalReplaceState.apply(this, args);
+      handleUrlChange();
+    };
+
+    // Listen for popstate events (back/forward navigation)
+    window.addEventListener('popstate', handleUrlChange);
+
+    // Also use MutationObserver as a fallback
+    const observer = new MutationObserver(() => {
+      if (location.href !== lastUrl) {
+        handleUrlChange();
       }
     });
 
-    // Observe the document for URL changes
     observer.observe(document, {
       subtree: true,
       childList: true
-    });
-
-    // Also listen for popstate events (back/forward navigation)
-    window.addEventListener('popstate', () => {
-      console.log('Scrollback: Popstate event, reinitializing anchors...');
-      setTimeout(() => {
-        if (anchorInjector) {
-          anchorInjector.clearAllAnchors();
-          anchorInjector.messageDetector.detectExistingMessages();
-        }
-      }, 500);
     });
 
     console.log('Scrollback: Navigation listener set up');

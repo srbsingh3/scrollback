@@ -42,6 +42,8 @@ class AnchorInjector {
    * @param {object} event - Change event with type and messages
    */
   handleMessagesChanged(event) {
+    console.log('[AnchorInjector] handleMessagesChanged:', event.type, '| messages:', event.messages.length);
+
     if (event.type === 'added') {
       this.injectAnchorsForMessages(event.messages);
     } else if (event.type === 'removed') {
@@ -70,20 +72,24 @@ class AnchorInjector {
 
     // Skip if anchor already injected for this message
     if (this.injectedAnchors.has(element)) {
+      console.log('[AnchorInjector] Skipping - anchor already exists for this element');
       return;
     }
 
     try {
       // Check message role - only create lines for USER messages
       const messageRole = this.adapter.getMessageRole(element);
+      console.log('[AnchorInjector] Message role:', messageRole);
 
       if (messageRole !== 'user') {
         // Skip non-user messages (assistant responses, system messages, etc.)
+        console.log('[AnchorInjector] Skipping non-user message');
         return;
       }
 
       // Generate or get existing anchor ID
       const anchorId = this.anchorGenerator.getOrCreateAnchorId(element);
+      console.log('[AnchorInjector] Generated anchor ID:', anchorId);
 
       // Add a line to the global anchor UI for this USER message
       this.anchorUI.addMessageLine(anchorId, element, () => {
@@ -93,10 +99,10 @@ class AnchorInjector {
       // Store reference
       this.injectedAnchors.set(element, anchorId);
 
-      console.log(`AnchorInjector: Added line for user message (${this.injectedAnchors.size} total user messages)`);
+      console.log(`[AnchorInjector] ✅ Added line for user message (${this.injectedAnchors.size} total user messages)`);
 
     } catch (error) {
-      console.warn('Failed to inject anchor for message:', error);
+      console.warn('[AnchorInjector] ❌ Failed to inject anchor for message:', error);
     }
   }
 
@@ -191,10 +197,28 @@ class AnchorInjector {
    * Clear all injected anchors
    */
   clearAllAnchors() {
+    console.log('[AnchorInjector] 🧹 Clearing all anchors');
+    console.log('[AnchorInjector] Previous anchor count:', this.injectedAnchors.size);
+
+    // Remove all anchors from UI
     this.injectedAnchors.forEach((anchorId, element) => {
       this.anchorUI.removeAnchor(anchorId);
     });
     this.injectedAnchors.clear();
+
+    // Clear message detector's tracked messages
+    if (this.messageDetector) {
+      console.log('[AnchorInjector] Clearing message detector');
+      this.messageDetector.clearMessages();
+    }
+
+    // Clear anchor generator's cache
+    if (this.anchorGenerator) {
+      console.log('[AnchorInjector] Clearing anchor generator');
+      this.anchorGenerator.clear();
+    }
+
+    console.log('[AnchorInjector] All anchors cleared');
   }
 
   /**
