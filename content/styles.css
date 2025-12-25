@@ -3,4 +3,141 @@
  * Notion-style anchor indicators for AI chat messages
  */
 
-/* Anchor styles will be added here */
+/* Anchor Container */
+.scrollback-anchor {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.08s ease-in-out;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  padding: 2px;
+}
+
+/* Show anchor on message hover */
+.scrollback-anchor:hover,
+*:hover > .scrollback-anchor {
+  opacity: 1;
+}
+
+/* Anchor Lines Container */
+.scrollback-anchor-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 14px;
+}
+
+/* Individual Lines (Notion-style) */
+.scrollback-anchor-line {
+  width: 100%;
+  height: 1.5px;
+  border-radius: 1px;
+  transition: background-color 0.08s ease-in-out;
+}
+
+/* Light Theme */
+.scrollback-anchor-light .scrollback-anchor-line {
+  background-color: #9ca3af; /* Gray-400 */
+}
+
+.scrollback-anchor-light:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.scrollback-anchor-light:hover .scrollback-anchor-line {
+  background-color: #4b5563; /* Gray-600 */
+}
+
+/* Dark Theme */
+.scrollback-anchor-dark .scrollback-anchor-line {
+  background-color: #6b7280; /* Gray-500 */
+}
+
+.scrollback-anchor-dark:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.scrollback-anchor-dark:hover .scrollback-anchor-line {
+  background-color: #9ca3af; /* Gray-400 */
+}
+
+/* Focus State (for keyboard navigation) */
+.scrollback-anchor:focus {
+  outline: 2px solid #3b82f6; /* Blue-500 */
+  outline-offset: 2px;
+  opacity: 1;
+}
+
+.scrollback-anchor:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Active State (on click) */
+.scrollback-anchor:active {
+  transform: scale(0.95);
+}
+
+/* Smooth transitions for all states */
+.scrollback-anchor,
+.scrollback-anchor-line,
+.scrollback-anchor:hover {
+  transition-timing-function: ease-in-out;
+}
+
+/* Ensure anchors don't interfere with text selection */
+.scrollback-anchor {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Prevent layout shift */
+.scrollback-anchor {
+  pointer-events: auto;
+}
+
+/* Hide anchor during text selection to avoid interference */
+::selection + .scrollback-anchor,
+::-moz-selection + .scrollback-anchor {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+  .scrollback-anchor {
+    width: 24px;
+    height: 24px;
+  }
+
+  .scrollback-anchor-lines {
+    width: 16px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .scrollback-anchor-light .scrollback-anchor-line {
+    background-color: #000000;
+  }
+
+  .scrollback-anchor-dark .scrollback-anchor-line {
+    background-color: #ffffff;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .scrollback-anchor,
+  .scrollback-anchor-line,
+  .scrollback-anchor:hover {
+    transition: none;
+  }
+}

@@ -33,17 +33,17 @@
   - [x] Handle message edits and regenerations
 
 ### 1.3 Anchor UI Components
-- [ ] Create Notion-style anchor visual component
-  - [ ] Build HTML structure for anchor indicator (3-6 horizontal lines)
-  - [ ] Implement CSS for thin horizontal lines design
-  - [ ] Add positioning logic (right side of message blocks)
-  - [ ] Implement theme adaptation (light/dark mode detection)
+- [x] Create Notion-style anchor visual component
+  - [x] Build HTML structure for anchor indicator (3-6 horizontal lines)
+  - [x] Implement CSS for thin horizontal lines design
+  - [x] Add positioning logic (right side of message blocks)
+  - [x] Implement theme adaptation (light/dark mode detection)
 
-- [ ] Implement hover interaction
-  - [ ] Add CSS transitions for fade-in/fade-out animation
-  - [ ] Set opacity for default state (semi-transparent/hidden)
-  - [ ] Set opacity for hover state (more visible)
-  - [ ] Ensure smooth transitions (<100ms)
+- [x] Implement hover interaction
+  - [x] Add CSS transitions for fade-in/fade-out animation
+  - [x] Set opacity for default state (semi-transparent/hidden)
+  - [x] Set opacity for hover state (more visible)
+  - [x] Ensure smooth transitions (<100ms)
 
 ### 1.4 Anchor Injection
 - [ ] Implement DOM injection for anchors
