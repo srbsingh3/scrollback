@@ -26,11 +26,11 @@
   - [x] Test selector reliability across different conversation types
 
 ### 1.2 Anchor Generation System
-- [ ] Design anchor ID generation strategy
-  - [ ] Decide on ID format (hash-based, sequential, or hybrid)
-  - [ ] Implement stable ID assignment for messages
-  - [ ] Ensure IDs persist during streaming updates
-  - [ ] Handle message edits and regenerations
+- [x] Design anchor ID generation strategy
+  - [x] Decide on ID format (hash-based, sequential, or hybrid)
+  - [x] Implement stable ID assignment for messages
+  - [x] Ensure IDs persist during streaming updates
+  - [x] Handle message edits and regenerations
 
 ### 1.3 Anchor UI Components
 - [ ] Create Notion-style anchor visual component
