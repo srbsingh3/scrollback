@@ -19,6 +19,7 @@
         "src/messageDetector.js",
         "src/anchorGenerator.js",
         "src/anchorUI.js",
+        "src/scrollNavigator.js",
         "src/anchorInjector.js",
         "content/main.js"
       ],

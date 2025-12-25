@@ -54,12 +54,12 @@
   - [x] Verify no layout shifting occurs
 
 ### 1.5 Navigation & Scrolling
-- [ ] Implement scroll-to-message functionality
-  - [ ] Add click event listeners to anchors
-  - [ ] Implement smooth scroll behavior
-  - [ ] Calculate proper scroll offset (account for fixed headers)
-  - [ ] Preserve scroll position during streaming updates
-  - [ ] Add visual feedback when scrolling to target
+- [x] Implement scroll-to-message functionality
+  - [x] Add click event listeners to anchors
+  - [x] Implement smooth scroll behavior
+  - [x] Calculate proper scroll offset (account for fixed headers)
+  - [x] Preserve scroll position during streaming updates
+  - [x] Add visual feedback when scrolling to target
 
 ### 1.6 Dynamic Content Handling
 - [ ] Implement MutationObserver for DOM changes

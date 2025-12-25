@@ -141,3 +141,62 @@
     transition: none;
   }
 }
+
+/* Scroll Target Visual Feedback */
+.scrollback-scroll-target {
+  position: relative;
+  animation: scrollback-pulse 1.5s ease-in-out;
+}
+
+@keyframes scrollback-pulse {
+  0% {
+    background-color: transparent;
+  }
+  15% {
+    background-color: rgba(59, 130, 246, 0.1); /* Blue-500 with low opacity */
+  }
+  30% {
+    background-color: rgba(59, 130, 246, 0.15);
+  }
+  50% {
+    background-color: rgba(59, 130, 246, 0.1);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* Dark mode scroll target */
+.dark .scrollback-scroll-target {
+  animation: scrollback-pulse-dark 1.5s ease-in-out;
+}
+
+@keyframes scrollback-pulse-dark {
+  0% {
+    background-color: transparent;
+  }
+  15% {
+    background-color: rgba(96, 165, 250, 0.08); /* Blue-400 with low opacity for dark mode */
+  }
+  30% {
+    background-color: rgba(96, 165, 250, 0.12);
+  }
+  50% {
+    background-color: rgba(96, 165, 250, 0.08);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* Respect reduced motion preference for scroll target */
+@media (prefers-reduced-motion: reduce) {
+  .scrollback-scroll-target {
+    animation: none;
+    background-color: rgba(59, 130, 246, 0.1) !important;
+  }
+
+  .dark .scrollback-scroll-target {
+    background-color: rgba(96, 165, 250, 0.08) !important;
+  }
+}

@@ -95,10 +95,11 @@
       const messageDetector = new MessageDetector(adapter);
       const anchorGenerator = new AnchorGenerator();
       const anchorUI = new AnchorUI(adapter);
+      const scrollNavigator = new ScrollNavigator(adapter);
       const anchorInjector = new AnchorInjector(adapter);
 
       // Initialize the anchor injector with all components
-      anchorInjector.initialize(messageDetector, anchorGenerator, anchorUI);
+      anchorInjector.initialize(messageDetector, anchorGenerator, anchorUI, scrollNavigator);
 
       console.log('Scrollback: Extension initialized successfully');
 
@@ -115,6 +116,7 @@
         detector: messageDetector,
         generator: anchorGenerator,
         ui: anchorUI,
+        navigator: scrollNavigator,
         adapter: adapter
       };
 

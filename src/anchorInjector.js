@@ -9,6 +9,7 @@ class AnchorInjector {
     this.messageDetector = null;
     this.anchorGenerator = null;
     this.anchorUI = null;
+    this.scrollNavigator = null;
     this.injectedAnchors = new Map(); // messageElement -> anchorId
   }
 
@@ -17,11 +18,13 @@ class AnchorInjector {
    * @param {MessageDetector} messageDetector - Message detection instance
    * @param {AnchorGenerator} anchorGenerator - Anchor ID generation instance
    * @param {AnchorUI} anchorUI - Anchor UI instance
+   * @param {ScrollNavigator} scrollNavigator - Scroll navigation instance
    */
-  initialize(messageDetector, anchorGenerator, anchorUI) {
+  initialize(messageDetector, anchorGenerator, anchorUI, scrollNavigator) {
     this.messageDetector = messageDetector;
     this.anchorGenerator = anchorGenerator;
     this.anchorUI = anchorUI;
+    this.scrollNavigator = scrollNavigator;
 
     // Set up message change listener
     this.messageDetector.initialize((event) => {
@@ -119,15 +122,14 @@ class AnchorInjector {
   }
 
   /**
-   * Handle anchor click (placeholder for Task 1.5)
+   * Handle anchor click - scroll to the message
    * @param {string} anchorId - Clicked anchor ID
    * @param {Element} messageElement - Message element
    */
   handleAnchorClick(anchorId, messageElement) {
-    // Placeholder for scroll functionality (Task 1.5)
     console.log('Anchor clicked:', anchorId);
 
-    // Visual feedback
+    // Visual feedback on anchor
     const anchor = this.anchorUI.getAnchorElement(anchorId);
     if (anchor) {
       anchor.style.transition = 'transform 0.1s ease-in-out';
@@ -135,6 +137,14 @@ class AnchorInjector {
       setTimeout(() => {
         anchor.style.transform = 'scale(1)';
       }, 100);
+    }
+
+    // Scroll to message if ScrollNavigator is available
+    if (this.scrollNavigator && messageElement) {
+      this.scrollNavigator.scrollToMessage(messageElement, {
+        behavior: 'smooth',
+        duration: 500
+      });
     }
   }
 
