@@ -13,7 +13,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  padding: 8px 0; /* Padding to prevent clipping of first/last lines with negative margins */
   transition: all 0.2s ease-in-out;
   /* Overflow handling for long chats */
   max-height: calc(100vh - 160px);
@@ -57,18 +57,19 @@
 .scrollback-anchor-lines {
   display: flex;
   flex-direction: column;
-  gap: 13px;
+  gap: 16px;
   width: 29px;
 }
 
 /* Individual Lines (each represents one message) */
 .scrollback-anchor-line {
   width: 100%;
-  height: 15px; /* Total interactive height: 2px line + 6.5px padding on each side */
+  height: 18px; /* Total interactive height: 2px line + 8px padding on each side */
   cursor: pointer;
   position: relative;
   display: flex;
   align-items: center;
+  margin: -8px 0; /* Negative margin to expand clickable area into gap space */
 }
 
 /* Visual line using pseudo-element */
