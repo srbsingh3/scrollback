@@ -14,7 +14,14 @@
         "https://chatgpt.com/*",
         "https://claude.ai/*"
       ],
-      "js": ["content/main.js"],
+      "js": [
+        "platform-adapters/chatgptAdapter.js",
+        "src/messageDetector.js",
+        "src/anchorGenerator.js",
+        "src/anchorUI.js",
+        "src/anchorInjector.js",
+        "content/main.js"
+      ],
       "css": ["content/styles.css"],
       "run_at": "document_idle"
     }

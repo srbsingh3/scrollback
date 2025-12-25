@@ -46,12 +46,12 @@
   - [x] Ensure smooth transitions (<100ms)
 
 ### 1.4 Anchor Injection
-- [ ] Implement DOM injection for anchors
-  - [ ] Create anchor elements dynamically
-  - [ ] Position anchors relative to message containers
-  - [ ] Ensure anchors don't interfere with text selection
-  - [ ] Test that copy/paste is not affected
-  - [ ] Verify no layout shifting occurs
+- [x] Implement DOM injection for anchors
+  - [x] Create anchor elements dynamically
+  - [x] Position anchors relative to message containers
+  - [x] Ensure anchors don't interfere with text selection
+  - [x] Test that copy/paste is not affected
+  - [x] Verify no layout shifting occurs
 
 ### 1.5 Navigation & Scrolling
 - [ ] Implement scroll-to-message functionality
