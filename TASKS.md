@@ -19,11 +19,11 @@
 ## Phase 1: Core Functionality (ChatGPT)
 
 ### 1.1 Message Detection
-- [ ] Implement ChatGPT DOM message selector
-  - [ ] Research and identify ChatGPT message container selectors
-  - [ ] Create function to detect all visible messages in conversation
-  - [ ] Handle user messages vs AI responses differently (if needed)
-  - [ ] Test selector reliability across different conversation types
+- [x] Implement ChatGPT DOM message selector
+  - [x] Research and identify ChatGPT message container selectors
+  - [x] Create function to detect all visible messages in conversation
+  - [x] Handle user messages vs AI responses differently (if needed)
+  - [x] Test selector reliability across different conversation types
 
 ### 1.2 Anchor Generation System
 - [ ] Design anchor ID generation strategy
