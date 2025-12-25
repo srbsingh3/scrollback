@@ -10,9 +10,9 @@
   - [x] Create `.gitignore` for extension artifacts
 
 ### Documentation
-- [ ] Create README.md with project overview
-- [ ] Document extension architecture and file structure
-- [ ] Add installation and development instructions
+- [x] Create README.md with project overview
+- [x] Document extension architecture and file structure
+- [x] Add installation and development instructions
 
 ---
 
