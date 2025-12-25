@@ -84,6 +84,16 @@ class AnchorUI {
   }
 
   /**
+   * Scroll the anchor container to the bottom
+   * (so the most recent messages' anchors are visible)
+   */
+  scrollToBottom() {
+    if (this.globalContainer) {
+      this.globalContainer.scrollTop = this.globalContainer.scrollHeight;
+    }
+  }
+
+  /**
    * Remove a line for a deleted message
    * @param {string} anchorId - Anchor ID
    */

@@ -19,12 +19,44 @@
   backdrop-filter: blur(8px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease-in-out;
+  /* Overflow handling for long chats */
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+/* Webkit scrollbar styling (Chrome, Safari, Edge) */
+.scrollback-global-anchor::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scrollback-global-anchor::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollback-global-anchor::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 2px;
+}
+
+.scrollback-global-anchor::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.8);
 }
 
 /* Dark theme for global container */
 .scrollback-global-anchor.scrollback-anchor-dark {
   background-color: rgba(30, 30, 30, 0.9);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  scrollbar-color: rgba(107, 114, 128, 0.5) transparent;
+}
+
+.scrollback-global-anchor.scrollback-anchor-dark::-webkit-scrollbar-thumb {
+  background-color: rgba(107, 114, 128, 0.5);
+}
+
+.scrollback-global-anchor.scrollback-anchor-dark::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(107, 114, 128, 0.8);
 }
 
 /* Anchor Lines Container */

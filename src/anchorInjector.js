@@ -11,6 +11,7 @@ class AnchorInjector {
     this.anchorUI = null;
     this.scrollNavigator = null;
     this.injectedAnchors = new Map(); // messageElement -> anchorId
+    this.scrollToBottomTimeout = null; // For debouncing scroll
   }
 
   /**
@@ -61,6 +62,24 @@ class AnchorInjector {
     messages.forEach(messageData => {
       this.injectAnchorForMessage(messageData);
     });
+
+    // Debounced scroll to bottom - waits for batch processing to complete
+    this.scheduleScrollToBottom();
+  }
+
+  /**
+   * Schedule a scroll to bottom with debouncing
+   * Only fires once after all rapid additions are done
+   */
+  scheduleScrollToBottom() {
+    if (this.scrollToBottomTimeout) {
+      clearTimeout(this.scrollToBottomTimeout);
+    }
+    this.scrollToBottomTimeout = setTimeout(() => {
+      if (this.anchorUI) {
+        this.anchorUI.scrollToBottom();
+      }
+    }, 100); // Small delay to batch multiple rapid additions
   }
 
   /**
@@ -238,6 +257,12 @@ class AnchorInjector {
    * Destroy the injector and clean up all resources
    */
   destroy() {
+    // Clear debounce timeout
+    if (this.scrollToBottomTimeout) {
+      clearTimeout(this.scrollToBottomTimeout);
+      this.scrollToBottomTimeout = null;
+    }
+
     this.clearAllAnchors();
 
     if (this.messageDetector) {
