@@ -97,9 +97,60 @@
         adapter: adapter
       };
 
+      // Set up navigation listener to detect chat switching
+      setupNavigationListener(anchorInjector);
+
     } catch (error) {
       console.error('Scrollback: Failed to initialize extension:', error);
     }
+  }
+
+  /**
+   * Set up listener for navigation/URL changes to handle chat switching
+   * @param {object} anchorInjector - The anchor injector instance
+   */
+  function setupNavigationListener(anchorInjector) {
+    let lastUrl = location.href;
+
+    // Use a MutationObserver to detect URL changes in SPAs
+    const observer = new MutationObserver(() => {
+      if (location.href !== lastUrl) {
+        console.log('Scrollback: URL changed, reinitializing anchors...', {
+          from: lastUrl,
+          to: location.href
+        });
+
+        lastUrl = location.href;
+
+        // Clear existing anchors and reinitialize detection
+        // Give the SPA time to update the DOM
+        setTimeout(() => {
+          if (anchorInjector) {
+            anchorInjector.clearAllAnchors();
+            anchorInjector.messageDetector.detectExistingMessages();
+          }
+        }, 500);
+      }
+    });
+
+    // Observe the document for URL changes
+    observer.observe(document, {
+      subtree: true,
+      childList: true
+    });
+
+    // Also listen for popstate events (back/forward navigation)
+    window.addEventListener('popstate', () => {
+      console.log('Scrollback: Popstate event, reinitializing anchors...');
+      setTimeout(() => {
+        if (anchorInjector) {
+          anchorInjector.clearAllAnchors();
+          anchorInjector.messageDetector.detectExistingMessages();
+        }
+      }, 500);
+    });
+
+    console.log('Scrollback: Navigation listener set up');
   }
 
   // Start initialization when DOM is ready

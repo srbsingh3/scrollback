@@ -48,13 +48,16 @@ class ScrollNavigator {
     this.addScrollFeedback(messageElement);
 
     // Perform smooth scroll
+    const scrollDuration = options.duration || 200;
     this.performScroll(scrollPosition, options)
       .then(() => {
-        // Keep visual feedback for a moment
+        // Release scroll lock immediately after scroll completes
+        // Keep visual feedback slightly longer for user clarity
+        this.isScrolling = false;
+
         setTimeout(() => {
           this.removeScrollFeedback(messageElement);
-          this.isScrolling = false;
-        }, 2000);
+        }, 500);
       })
       .catch((error) => {
         console.warn('ScrollNavigator: Scroll failed:', error);
