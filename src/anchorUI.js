@@ -9,8 +9,10 @@ class AnchorUI {
     this.adapter = platformAdapter;
     this.globalContainer = null;
     this.linesContainer = null;
+    this.tooltip = null; // Global tooltip element (portal)
     this.messageLines = new Map(); // anchorId -> line element
     this.messageElements = new Map(); // anchorId -> message element
+    this.messageTexts = new Map(); // anchorId -> preview text
     this.clickHandlers = new Map(); // anchorId -> handler function
   }
 
@@ -34,11 +36,18 @@ class AnchorUI {
 
     this.globalContainer.appendChild(this.linesContainer);
 
+    // Create global tooltip element (portal - outside scrollable container)
+    this.tooltip = document.createElement('div');
+    this.tooltip.className = 'scrollback-anchor-tooltip';
+    this.tooltip.setAttribute('role', 'tooltip');
+    this.tooltip.setAttribute('aria-hidden', 'true');
+
     // Apply theme
     this.applyTheme();
 
     // Inject into document
     document.body.appendChild(this.globalContainer);
+    document.body.appendChild(this.tooltip);
   }
 
   /**
@@ -66,16 +75,8 @@ class AnchorUI {
     line.setAttribute('aria-label', 'Navigate to message');
     line.setAttribute('tabindex', '0');
 
-    // Create preview tooltip
-    const preview = document.createElement('div');
-    preview.className = 'scrollback-anchor-preview';
-
-    // Extract message text content
+    // Extract and store message text for tooltip
     const messageText = this.extractMessageText(messageElement);
-    preview.textContent = messageText;
-
-    // Add preview to line
-    line.appendChild(preview);
 
     // Add to container
     this.linesContainer.appendChild(line);
@@ -83,10 +84,14 @@ class AnchorUI {
     // Store references
     this.messageLines.set(anchorId, line);
     this.messageElements.set(anchorId, messageElement);
+    this.messageTexts.set(anchorId, messageText);
     this.clickHandlers.set(anchorId, clickHandler);
 
     // Add click handler
     this.addClickHandler(line, clickHandler);
+
+    // Add hover handlers for tooltip
+    this.addTooltipHandlers(line, anchorId);
 
     // Update visibility to ensure container is shown
     this.updateVisibility();
@@ -128,6 +133,76 @@ class AnchorUI {
   }
 
   /**
+   * Add hover handlers for tooltip display
+   * @param {Element} line - Line element
+   * @param {string} anchorId - Anchor ID for this line
+   */
+  addTooltipHandlers(line, anchorId) {
+    line.addEventListener('mouseenter', () => {
+      this.showTooltip(line, anchorId);
+    });
+
+    line.addEventListener('mouseleave', () => {
+      this.hideTooltip();
+    });
+
+    // Also handle focus for keyboard users
+    line.addEventListener('focus', () => {
+      this.showTooltip(line, anchorId);
+    });
+
+    line.addEventListener('blur', () => {
+      this.hideTooltip();
+    });
+  }
+
+  /**
+   * Show tooltip positioned next to the given line
+   * @param {Element} line - Line element to position tooltip near
+   * @param {string} anchorId - Anchor ID to get message text
+   */
+  showTooltip(line, anchorId) {
+    if (!this.tooltip) return;
+
+    const messageText = this.messageTexts.get(anchorId);
+    if (!messageText) return;
+
+    // Set content
+    this.tooltip.textContent = messageText;
+
+    // Get line position
+    const lineRect = line.getBoundingClientRect();
+
+    // Position tooltip to the left of the line, vertically centered
+    const tooltipX = lineRect.left - 10; // 10px gap from line
+    const tooltipY = lineRect.top + (lineRect.height / 2);
+
+    // Apply positioning (right edge of tooltip at tooltipX)
+    this.tooltip.style.right = `${window.innerWidth - tooltipX}px`;
+    this.tooltip.style.top = `${tooltipY}px`;
+    this.tooltip.style.transform = 'translateY(-50%)';
+
+    // Apply theme class
+    const theme = this.adapter.detectTheme();
+    this.tooltip.classList.toggle('scrollback-tooltip-dark', theme === 'dark');
+    this.tooltip.classList.toggle('scrollback-tooltip-light', theme === 'light');
+
+    // Show tooltip
+    this.tooltip.classList.add('scrollback-tooltip-visible');
+    this.tooltip.setAttribute('aria-hidden', 'false');
+  }
+
+  /**
+   * Hide the tooltip
+   */
+  hideTooltip() {
+    if (!this.tooltip) return;
+
+    this.tooltip.classList.remove('scrollback-tooltip-visible');
+    this.tooltip.setAttribute('aria-hidden', 'true');
+  }
+
+  /**
    * Scroll the anchor container to the bottom
    * (so the most recent messages' anchors are visible)
    */
@@ -148,6 +223,7 @@ class AnchorUI {
     }
     this.messageLines.delete(anchorId);
     this.messageElements.delete(anchorId);
+    this.messageTexts.delete(anchorId);
     this.clickHandlers.delete(anchorId);
 
     // Hide container if no lines left
@@ -238,6 +314,7 @@ class AnchorUI {
     });
     this.messageLines.clear();
     this.messageElements.clear();
+    this.messageTexts.clear();
     this.clickHandlers.clear();
 
     // Remove global container
@@ -246,6 +323,12 @@ class AnchorUI {
     }
     this.globalContainer = null;
     this.linesContainer = null;
+
+    // Remove tooltip
+    if (this.tooltip && this.tooltip.parentNode) {
+      this.tooltip.parentNode.removeChild(this.tooltip);
+    }
+    this.tooltip = null;
   }
 
   /**

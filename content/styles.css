@@ -15,9 +15,10 @@
   justify-content: center;
   padding: 20px 0; /* Padding to prevent clipping of first/last lines with negative margins */
   transition: all 0.2s ease-in-out;
-  /* Overflow handling for long chats */
+  /* Overflow handling for long chats - tooltip is now a portal so we can scroll */
   max-height: calc(100vh - 160px);
-  overflow: visible; /* Allow tooltips to extend outside container */
+  overflow-x: hidden;
+  overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
 }
@@ -59,7 +60,6 @@
   flex-direction: column;
   gap: 16px;
   width: 40px;
-  overflow: visible;
 }
 
 /* Individual Lines (each represents one message) */
@@ -67,12 +67,11 @@
   width: 100%;
   height: 18px; /* Total interactive height: 2px line + 8px padding on each side */
   cursor: pointer;
-  position: relative; /* Required for absolute positioning of preview */
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   margin: -8px 0; /* Negative margin to expand clickable area into gap space */
-  overflow: visible; /* Ensure preview isn't clipped */
 }
 
 /* Visual line using pseudo-element */
@@ -126,16 +125,10 @@
   transform: scaleX(0.9);
 }
 
-/* Message Preview Tooltip */
-.scrollback-anchor-preview {
-  position: absolute;
-  right: 50px; /* Position to the left of the anchor line */
-  top: 50%;
-  transform: translateY(-50%);
+/* Portal-based Tooltip (appended to body, not affected by container overflow) */
+.scrollback-anchor-tooltip {
+  position: fixed;
   max-width: 300px;
-  min-height: 32px; /* Ensure minimum height */
-  display: flex; /* Use flexbox for proper sizing */
-  align-items: center; /* Center text vertically */
   padding: 8px 12px;
   border-radius: 8px;
   font-size: 13px;
@@ -146,27 +139,27 @@
   pointer-events: none; /* Don't interfere with mouse events */
   opacity: 0;
   transition: opacity 0.15s ease-in-out;
-  z-index: 10;
+  z-index: 10000; /* High z-index since it's a portal */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* Light Theme Preview */
-.scrollback-global-anchor.scrollback-anchor-light .scrollback-anchor-preview {
+/* Show tooltip when visible class is added */
+.scrollback-anchor-tooltip.scrollback-tooltip-visible {
+  opacity: 1;
+}
+
+/* Light Theme Tooltip */
+.scrollback-anchor-tooltip.scrollback-tooltip-light {
   background-color: #ffffff;
   color: #1f2937; /* Gray-800 */
   border: 1px solid #e5e7eb; /* Gray-200 */
 }
 
-/* Dark Theme Preview */
-.scrollback-global-anchor.scrollback-anchor-dark .scrollback-anchor-preview {
+/* Dark Theme Tooltip */
+.scrollback-anchor-tooltip.scrollback-tooltip-dark {
   background-color: #1f2937; /* Gray-800 */
   color: #f9fafb; /* Gray-50 */
   border: 1px solid #374151; /* Gray-700 */
-}
-
-/* Show preview on hover */
-.scrollback-anchor-line:hover .scrollback-anchor-preview {
-  opacity: 1;
 }
 
 /* Ensure lines don't interfere with text selection */
