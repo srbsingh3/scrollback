@@ -16,22 +16,17 @@ class ScrollNavigator {
    * @param {object} options - Scroll options
    */
   scrollToMessage(messageElement, options = {}) {
-    console.log('ScrollNavigator: scrollToMessage called', messageElement);
-
     if (!messageElement || !document.contains(messageElement)) {
-      console.warn('ScrollNavigator: Invalid message element');
       return;
     }
 
     // Reset scroll lock if it's been too long (safety valve)
     if (this.isScrolling && this.scrollStartTime && (Date.now() - this.scrollStartTime > 3000)) {
-      console.log('ScrollNavigator: Resetting stale scroll lock');
       this.isScrolling = false;
     }
 
     // Prevent multiple simultaneous scrolls
     if (this.isScrolling) {
-      console.log('ScrollNavigator: Already scrolling, skipping');
       return;
     }
 
@@ -42,25 +37,21 @@ class ScrollNavigator {
 
     // Calculate scroll position
     const scrollPosition = this.calculateScrollPosition(messageElement);
-    console.log('ScrollNavigator: Calculated scroll position:', scrollPosition);
 
     // Add visual feedback before scrolling
     this.addScrollFeedback(messageElement);
 
     // Perform smooth scroll
-    const scrollDuration = options.duration || 200;
     this.performScroll(scrollPosition, options)
       .then(() => {
         // Release scroll lock immediately after scroll completes
-        // Keep visual feedback slightly longer for user clarity
         this.isScrolling = false;
 
         setTimeout(() => {
           this.removeScrollFeedback(messageElement);
         }, 500);
       })
-      .catch((error) => {
-        console.warn('ScrollNavigator: Scroll failed:', error);
+      .catch(() => {
         this.removeScrollFeedback(messageElement);
         this.isScrolling = false;
       });
@@ -74,23 +65,18 @@ class ScrollNavigator {
   calculateScrollPosition(messageElement) {
     const scrollContainer = this.adapter.getScrollContainer();
     const scrollOffset = this.adapter.calculateScrollOffset();
-
     const elementRect = messageElement.getBoundingClientRect();
-    console.log('Element rect:', elementRect);
-    console.log('Scroll offset:', scrollOffset);
 
     if (scrollContainer === window) {
       // Window scrolling
       const currentScrollY = window.scrollY || window.pageYOffset;
       const absoluteTop = elementRect.top + currentScrollY;
-      console.log('Window scroll - currentScrollY:', currentScrollY, 'absoluteTop:', absoluteTop);
       return Math.max(0, absoluteTop - scrollOffset);
     } else {
       // Container scrolling
       const containerRect = scrollContainer.getBoundingClientRect();
       const currentScrollTop = scrollContainer.scrollTop;
       const relativeTop = elementRect.top - containerRect.top + currentScrollTop;
-      console.log('Container scroll - containerRect:', containerRect, 'scrollTop:', currentScrollTop, 'relativeTop:', relativeTop);
       return Math.max(0, relativeTop - scrollOffset);
     }
   }
@@ -105,9 +91,7 @@ class ScrollNavigator {
     return new Promise((resolve, reject) => {
       const behavior = options.behavior || 'smooth';
       const scrollContainer = this.adapter.getScrollContainer();
-      const duration = options.duration || 200; // Fixed snappy duration
-
-      console.log('ScrollNavigator: performScroll to', targetPosition, 'using container:', scrollContainer);
+      const duration = options.duration || 200;
 
       if (behavior === 'smooth' && 'scrollTo' in scrollContainer) {
         // Use native smooth scroll on the appropriate container
@@ -172,8 +156,6 @@ class ScrollNavigator {
 
     if (messageElement) {
       this.scrollToMessage(messageElement, options);
-    } else {
-      console.warn('ScrollNavigator: Could not find message for anchor:', anchorId);
     }
   }
 

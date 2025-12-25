@@ -4,6 +4,15 @@
  */
 
 class MessageDetector {
+  // Debug mode - controlled via window.__scrollback?.debug
+  static get DEBUG() {
+    return window.__scrollback?.debug === true;
+  }
+
+  static log(...args) {
+    if (MessageDetector.DEBUG) console.log('[MessageDetector]', ...args);
+  }
+
   constructor(platformAdapter) {
     this.adapter = platformAdapter;
     this.messages = new Map(); // Map of element -> message data
@@ -26,10 +35,7 @@ class MessageDetector {
    */
   detectExistingMessages() {
     const selector = this.adapter.getMessageSelector();
-    console.log('[MessageDetector] Detecting messages with selector:', selector);
-
     const elements = document.querySelectorAll(selector);
-    console.log('[MessageDetector] Found elements:', elements.length, '| Already tracked:', this.messages.size);
 
     const newMessages = [];
     elements.forEach(element => {
@@ -40,16 +46,12 @@ class MessageDetector {
       }
     });
 
-    console.log('[MessageDetector] New messages to add:', newMessages.length);
-
     if (newMessages.length > 0 && this.onMessagesChanged) {
-      console.log('[MessageDetector] Calling onMessagesChanged callback with', newMessages.length, 'messages');
+      MessageDetector.log('New messages detected:', newMessages.length);
       this.onMessagesChanged({
         type: 'added',
         messages: newMessages
       });
-    } else {
-      console.log('[MessageDetector] No new messages to process');
     }
   }
 
@@ -107,42 +109,36 @@ class MessageDetector {
    */
   setupObserver() {
     const containerSelector = this.adapter.getContainerSelector();
-    console.log('[MessageDetector] Setting up observer for container:', containerSelector);
-
     const container = document.querySelector(containerSelector);
 
     if (!container) {
-      console.warn('[MessageDetector] ❌ Could not find conversation container!');
+      console.warn('[MessageDetector] Could not find conversation container');
       return;
     }
 
-    console.log('[MessageDetector] ✅ Container found, setting up MutationObserver');
-
     // Debounce function to avoid excessive callbacks
-    // Use shorter delay for better responsiveness during streaming
+    // Use longer delay to reduce CPU usage during streaming
     let debounceTimer = null;
     const debouncedDetect = () => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        console.log('[MessageDetector] MutationObserver triggered - detecting messages');
         this.detectExistingMessages();
         this.cleanupRemovedMessages();
         this.updateStreamingMessages();
-      }, 50); // 50ms for responsive streaming updates
+      }, 150); // 150ms to reduce callback frequency
     };
 
     this.observer = new MutationObserver(debouncedDetect);
 
+    // Optimized observer config - removed characterData for better performance
+    // Messages are detected via childList changes anyway
     this.observer.observe(container, {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['data-message-id', 'class'], // Watch for relevant attribute changes
-      characterData: true, // Watch for text content changes (streaming updates)
-      characterDataOldValue: false
+      attributeFilter: ['data-message-id'], // Only watch message ID changes
+      characterData: false // Disabled - too expensive during streaming
     });
-
-    console.log('[MessageDetector] Observer is now active');
   }
 
   /**
@@ -217,18 +213,13 @@ class MessageDetector {
    * Useful when switching chats to reset state
    */
   clearMessages() {
-    console.log('[MessageDetector] 🔄 Clearing all tracked messages and resetting observer');
-    console.log('[MessageDetector] Previous tracked messages:', this.messages.size);
+    MessageDetector.log('Clearing tracked messages:', this.messages.size);
     this.messages.clear();
 
     // Disconnect and reconnect the observer to ensure it's watching the correct container
     if (this.observer) {
-      console.log('[MessageDetector] Disconnecting old observer');
       this.observer.disconnect();
-      console.log('[MessageDetector] Reconnecting observer to new container');
       this.setupObserver();
-    } else {
-      console.warn('[MessageDetector] ⚠️ No observer to disconnect!');
     }
   }
 

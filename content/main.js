@@ -6,7 +6,13 @@
 (function() {
   'use strict';
 
-  console.log('Scrollback extension loaded');
+  // Debug mode - set to true for verbose logging, false for production
+  const DEBUG = false;
+  const log = DEBUG ? console.log.bind(console, '[Scrollback]') : () => {};
+  const warn = console.warn.bind(console, '[Scrollback]');
+  const error = console.error.bind(console, '[Scrollback]');
+
+  log('Extension loaded');
 
   // Create and configure platform router
   const platformRouter = new PlatformRouter();
@@ -29,12 +35,11 @@
    * Initialize the Scrollback extension
    */
   function initialize() {
-    console.log('Scrollback: Starting initialization...');
+    log('Starting initialization...');
 
     // Check if platform is supported
     if (!platformRouter.isSupported()) {
-      console.log('Scrollback: Unsupported platform - extension will not run');
-      console.log(`Scrollback: Supported platforms: ${platformRouter.getSupportedPlatforms().join(', ')}`);
+      log('Unsupported platform - extension will not run');
       return;
     }
 
@@ -42,11 +47,11 @@
     const adapter = platformRouter.getAdapter();
 
     if (!adapter) {
-      console.log('Scrollback: Failed to get platform adapter');
+      warn('Failed to get platform adapter');
       return;
     }
 
-    console.log(`Scrollback: Platform detected - ${adapter.getPlatformName()}`);
+    log('Platform detected -', adapter.getPlatformName());
 
     // Wait for the conversation container to be available
     const containerSelector = adapter.getContainerSelector();
@@ -62,7 +67,7 @@
     // Timeout after 10 seconds
     setTimeout(() => {
       clearInterval(waitForContainer);
-      console.log('Scrollback: Timeout waiting for conversation container');
+      log('Timeout waiting for conversation container');
     }, 10000);
   }
 
@@ -72,7 +77,7 @@
    */
   function initializeExtension(adapter) {
     try {
-      console.log('Scrollback: Initializing components...');
+      log('Initializing components...');
 
       // Create component instances
       const messageDetector = new MessageDetector(adapter);
@@ -84,7 +89,7 @@
       // Initialize the anchor injector with all components
       anchorInjector.initialize(messageDetector, anchorGenerator, anchorUI, scrollNavigator);
 
-      console.log('Scrollback: Extension initialized successfully');
+      log('Extension initialized successfully');
 
       // Store reference globally for debugging
       window.__scrollback = {
@@ -94,14 +99,15 @@
         generator: anchorGenerator,
         ui: anchorUI,
         navigator: scrollNavigator,
-        adapter: adapter
+        adapter: adapter,
+        debug: DEBUG
       };
 
       // Set up navigation listener to detect chat switching
       setupNavigationListener(anchorInjector);
 
-    } catch (error) {
-      console.error('Scrollback: Failed to initialize extension:', error);
+    } catch (err) {
+      error('Failed to initialize extension:', err);
     }
   }
 
@@ -111,41 +117,26 @@
    */
   function setupNavigationListener(anchorInjector) {
     let lastUrl = location.href;
-    console.log('Scrollback: setupNavigationListener called with URL:', lastUrl);
-    console.log('Scrollback: anchorInjector available:', !!anchorInjector);
+    let urlCheckInterval = null;
 
     // Function to handle URL changes
     const handleUrlChange = () => {
       const currentUrl = location.href;
-      console.log('Scrollback: handleUrlChange called', {
-        lastUrl: lastUrl,
-        currentUrl: currentUrl,
-        changed: currentUrl !== lastUrl
-      });
 
       if (currentUrl !== lastUrl) {
-        console.log('🔄 Scrollback: URL CHANGED! Reinitializing anchors...', {
-          from: lastUrl,
-          to: currentUrl
-        });
-
         lastUrl = currentUrl;
+
+        // Invalidate scroll container cache when navigating
+        if (window.__scrollback?.adapter?.invalidateScrollContainerCache) {
+          window.__scrollback.adapter.invalidateScrollContainerCache();
+        }
 
         // Clear existing anchors and reinitialize detection
         // Give the SPA time to update the DOM
-        console.log('Scrollback: Setting 800ms timeout for reinitialization...');
         setTimeout(() => {
-          console.log('Scrollback: Timeout complete, executing reinitialization...');
           if (anchorInjector) {
-            console.log('Scrollback: Calling clearAllAnchors...');
             anchorInjector.clearAllAnchors();
-
-            console.log('Scrollback: Calling detectExistingMessages...');
             anchorInjector.messageDetector.detectExistingMessages();
-
-            console.log('Scrollback: Reinitialization complete. Stats:', anchorInjector.getStats());
-          } else {
-            console.error('Scrollback: anchorInjector is null/undefined!');
           }
         }, 800);
       }
@@ -156,13 +147,11 @@
     const originalReplaceState = history.replaceState;
 
     history.pushState = function(...args) {
-      console.log('Scrollback: pushState called', args);
       originalPushState.apply(this, args);
       handleUrlChange();
     };
 
     history.replaceState = function(...args) {
-      console.log('Scrollback: replaceState called', args);
       originalReplaceState.apply(this, args);
       handleUrlChange();
     };
@@ -170,19 +159,20 @@
     // Listen for popstate events (back/forward navigation)
     window.addEventListener('popstate', handleUrlChange);
 
-    // Also use MutationObserver as a fallback
-    const observer = new MutationObserver(() => {
+    // Use lightweight polling instead of document-wide MutationObserver
+    // This is much more performant than observing all DOM changes
+    urlCheckInterval = setInterval(() => {
       if (location.href !== lastUrl) {
         handleUrlChange();
       }
-    });
+    }, 500); // Check every 500ms - responsive enough for navigation
 
-    observer.observe(document, {
-      subtree: true,
-      childList: true
+    // Clean up interval if page unloads
+    window.addEventListener('beforeunload', () => {
+      if (urlCheckInterval) {
+        clearInterval(urlCheckInterval);
+      }
     });
-
-    console.log('Scrollback: Navigation listener set up');
   }
 
   // Start initialization when DOM is ready

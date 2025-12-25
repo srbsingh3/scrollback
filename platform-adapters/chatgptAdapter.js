@@ -4,6 +4,13 @@
  */
 
 class ChatGPTAdapter extends BasePlatformAdapter {
+  constructor() {
+    super();
+    this._cachedScrollContainer = null;
+    this._scrollContainerCacheTime = 0;
+    this._scrollContainerCacheTTL = 5000; // Cache for 5 seconds
+  }
+
   /**
    * Get the CSS selector for individual message elements
    * ChatGPT uses article elements with data-testid or specific classes
@@ -69,23 +76,32 @@ class ChatGPTAdapter extends BasePlatformAdapter {
   /**
    * Get the scrollable container element for navigation
    * ChatGPT uses an internal scrollable div, not the window
+   * Uses caching to avoid expensive DOM queries on every scroll
    * @returns {Element|Window} Scrollable element
    */
   getScrollContainer() {
+    const now = Date.now();
+
+    // Return cached container if still valid and present in DOM
+    if (this._cachedScrollContainer &&
+        (now - this._scrollContainerCacheTime) < this._scrollContainerCacheTTL &&
+        document.contains(this._cachedScrollContainer)) {
+      return this._cachedScrollContainer;
+    }
+
     // ChatGPT's scroll container is a DIV with overflow-y: auto
-    // Look for scrollable elements that contain conversation messages
+    // Search all main and div elements (like the original working code)
     const scrollables = Array.from(document.querySelectorAll('main, div')).filter(el => {
       const style = window.getComputedStyle(el);
       return (style.overflowY === 'auto' || style.overflowY === 'scroll') &&
              el.scrollHeight > el.clientHeight;
     });
 
-    console.log('Found scrollable containers:', scrollables.length, scrollables);
-
     // Find the one that contains conversation articles
     for (const container of scrollables) {
       if (container.querySelector('article[data-testid^="conversation-turn"]')) {
-        console.log('ScrollContainer found (contains articles):', container);
+        this._cachedScrollContainer = container;
+        this._scrollContainerCacheTime = now;
         return container;
       }
     }
@@ -95,12 +111,21 @@ class ChatGPTAdapter extends BasePlatformAdapter {
       const largest = scrollables.reduce((max, el) =>
         el.clientHeight > max.clientHeight ? el : max
       );
-      console.log('ScrollContainer using largest:', largest);
+      this._cachedScrollContainer = largest;
+      this._scrollContainerCacheTime = now;
       return largest;
     }
 
-    console.log('ScrollContainer: falling back to window');
     return window;
+  }
+
+  /**
+   * Invalidate the scroll container cache
+   * Call this when navigating to a new chat
+   */
+  invalidateScrollContainerCache() {
+    this._cachedScrollContainer = null;
+    this._scrollContainerCacheTime = 0;
   }
 
   /**

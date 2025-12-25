@@ -38,8 +38,6 @@ class AnchorUI {
 
     // Inject into document
     document.body.appendChild(this.globalContainer);
-
-    console.log('Global anchor container initialized');
   }
 
   /**

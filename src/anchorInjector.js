@@ -4,6 +4,15 @@
  */
 
 class AnchorInjector {
+  // Debug mode - controlled via window.__scrollback?.debug
+  static get DEBUG() {
+    return window.__scrollback?.debug === true;
+  }
+
+  static log(...args) {
+    if (AnchorInjector.DEBUG) console.log('[AnchorInjector]', ...args);
+  }
+
   constructor(platformAdapter) {
     this.adapter = platformAdapter;
     this.messageDetector = null;
@@ -35,7 +44,7 @@ class AnchorInjector {
       this.handleMessagesChanged(event);
     });
 
-    console.log('AnchorInjector initialized');
+    AnchorInjector.log('Initialized');
   }
 
   /**
@@ -43,7 +52,7 @@ class AnchorInjector {
    * @param {object} event - Change event with type and messages
    */
   handleMessagesChanged(event) {
-    console.log('[AnchorInjector] handleMessagesChanged:', event.type, '| messages:', event.messages.length);
+    AnchorInjector.log('Messages changed:', event.type, event.messages.length);
 
     if (event.type === 'added') {
       this.injectAnchorsForMessages(event.messages);
@@ -91,24 +100,19 @@ class AnchorInjector {
 
     // Skip if anchor already injected for this message
     if (this.injectedAnchors.has(element)) {
-      console.log('[AnchorInjector] Skipping - anchor already exists for this element');
       return;
     }
 
     try {
       // Check message role - only create lines for USER messages
       const messageRole = this.adapter.getMessageRole(element);
-      console.log('[AnchorInjector] Message role:', messageRole);
 
       if (messageRole !== 'user') {
-        // Skip non-user messages (assistant responses, system messages, etc.)
-        console.log('[AnchorInjector] Skipping non-user message');
         return;
       }
 
       // Generate or get existing anchor ID
       const anchorId = this.anchorGenerator.getOrCreateAnchorId(element);
-      console.log('[AnchorInjector] Generated anchor ID:', anchorId);
 
       // Add a line to the global anchor UI for this USER message
       this.anchorUI.addMessageLine(anchorId, element, () => {
@@ -118,10 +122,10 @@ class AnchorInjector {
       // Store reference
       this.injectedAnchors.set(element, anchorId);
 
-      console.log(`[AnchorInjector] ✅ Added line for user message (${this.injectedAnchors.size} total user messages)`);
+      AnchorInjector.log('Added anchor for user message, total:', this.injectedAnchors.size);
 
-    } catch (error) {
-      console.warn('[AnchorInjector] ❌ Failed to inject anchor for message:', error);
+    } catch (err) {
+      console.warn('[AnchorInjector] Failed to inject anchor:', err);
     }
   }
 
@@ -178,7 +182,7 @@ class AnchorInjector {
    * @param {Element} messageElement - Message element
    */
   handleAnchorClick(anchorId, messageElement) {
-    console.log('Anchor clicked:', anchorId);
+    AnchorInjector.log('Anchor clicked:', anchorId);
 
     // Visual feedback on anchor
     const anchor = this.anchorUI.getAnchorElement(anchorId);
@@ -216,8 +220,7 @@ class AnchorInjector {
    * Clear all injected anchors
    */
   clearAllAnchors() {
-    console.log('[AnchorInjector] 🧹 Clearing all anchors');
-    console.log('[AnchorInjector] Previous anchor count:', this.injectedAnchors.size);
+    AnchorInjector.log('Clearing anchors, count:', this.injectedAnchors.size);
 
     // Remove all anchors from UI
     this.injectedAnchors.forEach((anchorId, element) => {
@@ -227,17 +230,13 @@ class AnchorInjector {
 
     // Clear message detector's tracked messages
     if (this.messageDetector) {
-      console.log('[AnchorInjector] Clearing message detector');
       this.messageDetector.clearMessages();
     }
 
     // Clear anchor generator's cache
     if (this.anchorGenerator) {
-      console.log('[AnchorInjector] Clearing anchor generator');
       this.anchorGenerator.clear();
     }
-
-    console.log('[AnchorInjector] All anchors cleared');
   }
 
   /**
