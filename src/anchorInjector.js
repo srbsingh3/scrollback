@@ -149,7 +149,7 @@ class AnchorInjector {
     const anchorId = this.injectedAnchors.get(element);
     if (anchorId) {
       // Remove from UI
-      this.anchorUI.removeAnchor(anchorId);
+      this.anchorUI.removeMessageLine(anchorId);
 
       // Remove from generator
       this.anchorGenerator.removeAnchor(element);
@@ -185,7 +185,7 @@ class AnchorInjector {
     AnchorInjector.log('Anchor clicked:', anchorId);
 
     // Visual feedback on anchor
-    const anchor = this.anchorUI.getAnchorElement(anchorId);
+    const anchor = this.anchorUI.getLineElement(anchorId);
     if (anchor) {
       anchor.style.transition = 'transform 0.1s ease-in-out';
       anchor.style.transform = 'scale(0.9)';
@@ -224,7 +224,7 @@ class AnchorInjector {
 
     // Remove all anchors from UI
     this.injectedAnchors.forEach((anchorId, element) => {
-      this.anchorUI.removeAnchor(anchorId);
+      this.anchorUI.removeMessageLine(anchorId);
     });
     this.injectedAnchors.clear();
 
@@ -247,7 +247,7 @@ class AnchorInjector {
     return {
       injectedAnchors: this.injectedAnchors.size,
       trackedMessages: this.messageDetector.getAllMessages().length,
-      anchorUICount: this.anchorUI.getAnchorCount(),
+      anchorUICount: this.anchorUI.getLineCount(),
       generatorStats: this.anchorGenerator.getStats()
     };
   }

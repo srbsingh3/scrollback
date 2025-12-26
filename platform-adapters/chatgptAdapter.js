@@ -62,18 +62,6 @@ class ChatGPTAdapter extends BasePlatformAdapter {
   }
 
   /**
-   * Get positioning hints for anchor placement
-   * @returns {object} Positioning configuration
-   */
-  getAnchorPosition() {
-    return {
-      side: 'right',
-      offset: 16,
-      topOffset: 16
-    };
-  }
-
-  /**
    * Get the scrollable container element for navigation
    * ChatGPT uses an internal scrollable div, not the window
    * Uses caching to avoid expensive DOM queries on every scroll

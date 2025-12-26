@@ -94,24 +94,9 @@ class MessageDetector {
 
     // Generate hash based on element position and content
     const position = Array.from(element.parentNode?.children || []).indexOf(element);
-    const contentHash = this.simpleHash(element.textContent?.substring(0, 100) || '');
+    const contentHash = simpleHash(element.textContent?.substring(0, 100) || '');
 
     return `msg-${position}-${contentHash}`;
-  }
-
-  /**
-   * Simple hash function for generating IDs
-   * @param {string} str - String to hash
-   * @returns {string} Hash string
-   */
-  simpleHash(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-    return Math.abs(hash).toString(36);
   }
 
   /**

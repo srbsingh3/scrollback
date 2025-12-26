@@ -52,18 +52,6 @@ class ClaudeAdapter extends BasePlatformAdapter {
   }
 
   /**
-   * Get positioning hints for anchor placement
-   * @returns {object} Positioning configuration
-   */
-  getAnchorPosition() {
-    return {
-      side: 'right',
-      offset: 16,
-      topOffset: 16
-    };
-  }
-
-  /**
    * Get platform name
    * @returns {string} Platform name
    */

@@ -65,8 +65,8 @@ class BasePlatformAdapter {
   getAnchorPosition() {
     return {
       side: 'right',
-      offset: 8,
-      topOffset: 12
+      offset: 16,
+      topOffset: 16
     };
   }
 

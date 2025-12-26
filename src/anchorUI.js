@@ -396,63 +396,6 @@ class AnchorUI {
     return this.anchors.size;
   }
 
-  /**
-   * Legacy compatibility method (used by anchorInjector)
-   * @deprecated Use addMessageLine instead
-   */
-  createAnchor(anchorId, messageElement) {
-    // This is called by anchorInjector but we handle it differently now
-    // Return a placeholder that won't be used
-    return document.createElement('div');
-  }
-
-  /**
-   * Legacy compatibility method (used by anchorInjector)
-   * @deprecated No longer needed with global container
-   */
-  injectAnchor(anchor, messageElement) {
-    // No-op - we use global container now
-  }
-
-  /**
-   * Legacy compatibility method (used by anchorInjector)
-   * @deprecated Use removeMessageLine instead
-   */
-  removeAnchor(anchorId) {
-    this.removeMessageLine(anchorId);
-  }
-
-  /**
-   * Legacy compatibility method (used by anchorInjector)
-   * @deprecated Use getLineElement instead
-   */
-  getAnchorElement(anchorId) {
-    return this.getLineElement(anchorId);
-  }
-
-  /**
-   * Legacy compatibility method (used by anchorInjector)
-   * @deprecated Use hasLine instead
-   */
-  hasAnchor(anchorId) {
-    return this.hasLine(anchorId);
-  }
-
-  /**
-   * Legacy compatibility method (used by anchorInjector)
-   * @deprecated Use getLineCount instead
-   */
-  getAnchorCount() {
-    return this.getLineCount();
-  }
-
-  /**
-   * Legacy compatibility method (used by anchorInjector)
-   * @deprecated Use updateTheme instead
-   */
-  updateAllAnchorsTheme() {
-    this.updateTheme();
-  }
 }
 
 // Export for use in other modules

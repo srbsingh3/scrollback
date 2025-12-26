@@ -15,6 +15,7 @@
         "https://claude.ai/*"
       ],
       "js": [
+        "src/utils.js",
         "platform-adapters/baseAdapter.js",
         "platform-adapters/chatgptAdapter.js",
         "platform-adapters/claudeAdapter.js",
