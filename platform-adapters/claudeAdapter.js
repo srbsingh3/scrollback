@@ -7,18 +7,13 @@ class ClaudeAdapter extends BasePlatformAdapter {
   /**
    * Get the CSS selector for individual message elements
    * Claude uses a different DOM structure compared to ChatGPT
+   * Only selects user messages (not assistant messages)
    * @returns {string} CSS selector
    */
   getMessageSelector() {
-    // Claude message structure: Uses semantic divs with role indicators
-    // Multiple selectors for robustness against DOM changes
-    return [
-      '[data-test-render-count]',                    // Primary: Message containers with render tracking
-      'div[class*="font-claude-message"]',           // Messages with Claude-specific font classes
-      '.group\\/conversation-turn',                  // Conversation turn groups
-      'div.relative.w-full',                         // Relative positioned message wrappers
-      'main > div > div > div > div[class*="flex"]'  // Fallback: Flex containers in main
-    ].join(', ');
+    // Claude uses very specific data-testid attributes for user messages
+    // This is a robust, precise selector that won't match unintended elements
+    return '[data-testid="user-message"]';
   }
 
   /**
@@ -26,38 +21,33 @@ class ClaudeAdapter extends BasePlatformAdapter {
    * @returns {string} CSS selector
    */
   getContainerSelector() {
-    return [
-      'main',
-      '[role="main"]',
-      'div[class*="conversation"]',
-      '.flex.flex-col.items-center'
-    ].join(', ');
+    // Claude's conversation container has very specific layout classes
+    // Using the precise selector found via DOM inspection
+    return '.flex-1.flex.flex-col.px-4.max-w-3xl.mx-auto.w-full.pt-1';
   }
 
   /**
    * Calculate the scroll offset to account for fixed headers
-   * Claude typically has a fixed header at the top
+   * Claude has a sticky header at the top (48px height)
    * @returns {number} Offset in pixels
    */
   calculateScrollOffset() {
-    const header = document.querySelector('header');
+    const header = document.querySelector('[data-testid="page-header"]');
     if (header) {
-      return header.offsetHeight + 16; // Add some padding
+      return header.offsetHeight + 16; // Header is 48px + 16px padding
     }
-    return 60; // Default offset for Claude
+    return 64; // Default: 48px header + 16px padding
   }
 
   /**
    * Detect the current theme (light or dark mode)
-   * Claude uses class-based theme switching similar to ChatGPT
+   * Claude uses data-theme attribute on the html element
    * @returns {'light' | 'dark'} Current theme
    */
   detectTheme() {
-    // Check for dark mode class on html or body element
+    // Claude sets data-theme="claude" but also uses 'dark' class for dark mode
     const isDark = document.documentElement.classList.contains('dark') ||
-                   document.body.classList.contains('dark') ||
-                   document.documentElement.getAttribute('data-theme') === 'dark' ||
-                   document.querySelector('[data-theme="dark"]') !== null;
+                   document.body.classList.contains('dark');
 
     return isDark ? 'dark' : 'light';
   }
@@ -83,6 +73,23 @@ class ClaudeAdapter extends BasePlatformAdapter {
   }
 
   /**
+   * Get the scrollable container element for navigation
+   * Claude uses a different scrollable container than the conversation container
+   * @returns {Element|Window} Scrollable element
+   */
+  getScrollContainer() {
+    // Claude's actual scrollable container (3 levels up from conversation container)
+    const scrollableContainer = document.querySelector('.overflow-y-scroll.overflow-x-hidden.pt-6.flex-1');
+
+    if (scrollableContainer) {
+      return scrollableContainer;
+    }
+
+    // Fallback to window if not found
+    return window;
+  }
+
+  /**
    * Check if an element is a valid message container
    * @param {Element} element - DOM element to check
    * @returns {boolean} True if element is a message
@@ -90,30 +97,20 @@ class ClaudeAdapter extends BasePlatformAdapter {
   isValidMessage(element) {
     if (!element) return false;
 
-    // Filter out empty or non-visible elements
+    // Claude uses data-testid="user-message", so if it matches our selector, it's valid
+    // We still do basic visibility checks to be safe
     if (element.offsetHeight === 0 || element.offsetWidth === 0) {
       return false;
     }
 
-    // Check if element has meaningful content
+    // Must have the correct data-testid
+    if (element.getAttribute('data-testid') !== 'user-message') {
+      return false;
+    }
+
+    // Check if element has some content (even collapsed messages have some height)
     const textContent = element.textContent?.trim();
     if (!textContent || textContent.length === 0) {
-      return false;
-    }
-
-    // Exclude system messages or UI elements
-    if (element.hasAttribute('data-system-message')) {
-      return false;
-    }
-
-    // Exclude loading indicators or placeholders
-    if (element.classList.contains('loading') ||
-        element.classList.contains('placeholder')) {
-      return false;
-    }
-
-    // Exclude very small elements (likely UI components, not messages)
-    if (element.offsetHeight < 20) {
       return false;
     }
 
@@ -126,66 +123,13 @@ class ClaudeAdapter extends BasePlatformAdapter {
    * @returns {'user' | 'assistant' | 'unknown'} Message author role
    */
   getMessageRole(element) {
-    // Strategy 1: Check for data attributes indicating role
-    const dataRole = element.getAttribute('data-message-author') ||
-                     element.getAttribute('data-author-role');
-
-    if (dataRole) {
-      if (dataRole.toLowerCase().includes('user') || dataRole.toLowerCase().includes('human')) {
-        return 'user';
-      }
-      if (dataRole.toLowerCase().includes('assistant') ||
-          dataRole.toLowerCase().includes('claude')) {
-        return 'assistant';
-      }
-    }
-
-    // Strategy 2: Look for role indicators in child elements
-    const roleIndicator = element.querySelector('[data-role]');
-    if (roleIndicator) {
-      const role = roleIndicator.getAttribute('data-role');
-      if (role === 'user' || role === 'human') return 'user';
-      if (role === 'assistant' || role === 'claude') return 'assistant';
-    }
-
-    // Strategy 3: Check for class-based indicators
-    if (element.classList.contains('user-message') ||
-        element.querySelector('.user-message') ||
-        element.querySelector('[class*="human"]')) {
+    // Since we only select elements with data-testid="user-message",
+    // all messages will be user messages
+    if (element.getAttribute('data-testid') === 'user-message') {
       return 'user';
     }
 
-    if (element.classList.contains('assistant-message') ||
-        element.querySelector('.assistant-message') ||
-        element.querySelector('[class*="claude"]')) {
-      return 'assistant';
-    }
-
-    // Strategy 4: Analyze positioning (user messages often align right)
-    const computedStyle = window.getComputedStyle(element);
-    if (computedStyle.justifyContent === 'flex-end' ||
-        computedStyle.alignSelf === 'flex-end') {
-      return 'user';
-    }
-
-    // Strategy 5: Check parent containers for role hints
-    let parent = element.parentElement;
-    while (parent && parent !== document.body) {
-      const parentRole = parent.getAttribute('data-message-author') ||
-                        parent.getAttribute('data-author-role');
-      if (parentRole) {
-        if (parentRole.toLowerCase().includes('user') ||
-            parentRole.toLowerCase().includes('human')) {
-          return 'user';
-        }
-        if (parentRole.toLowerCase().includes('assistant') ||
-            parentRole.toLowerCase().includes('claude')) {
-          return 'assistant';
-        }
-      }
-      parent = parent.parentElement;
-    }
-
+    // If we somehow got an element without the correct data-testid, mark as unknown
     return 'unknown';
   }
 }

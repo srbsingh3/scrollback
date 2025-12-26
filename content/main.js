@@ -79,35 +79,65 @@
     try {
       log('Initializing components...');
 
-      // Create component instances
-      const messageDetector = new MessageDetector(adapter);
-      const anchorGenerator = new AnchorGenerator();
-      const anchorUI = new AnchorUI(adapter);
-      const scrollNavigator = new ScrollNavigator(adapter);
-      const anchorInjector = new AnchorInjector(adapter);
+      // For Claude (React-based SPA), wait for React hydration to complete
+      // This prevents React error #418 (hydration mismatch)
+      const isClaude = adapter.getPlatformName() === 'Claude';
 
-      // Initialize the anchor injector with all components
-      anchorInjector.initialize(messageDetector, anchorGenerator, anchorUI, scrollNavigator);
+      if (isClaude) {
+        log('Claude platform detected - waiting for React hydration...');
 
-      log('Extension initialized successfully');
+        // Use requestIdleCallback for better performance (initializes when browser is idle)
+        // Falls back to setTimeout if not supported
+        const initWhenReady = window.requestIdleCallback || ((cb) => setTimeout(cb, 500));
 
-      // Store reference globally for debugging
-      window.__scrollback = {
-        router: platformRouter,
-        injector: anchorInjector,
-        detector: messageDetector,
-        generator: anchorGenerator,
-        ui: anchorUI,
-        navigator: scrollNavigator,
-        adapter: adapter,
-        debug: DEBUG
-      };
+        initWhenReady(() => {
+          initializeComponents(adapter);
+        });
+      } else {
+        // ChatGPT and other platforms - initialize immediately
+        initializeComponents(adapter);
+      }
+
+    } catch (err) {
+      error('Failed to initialize extension:', err);
+    }
+  }
+
+  /**
+   * Initialize component instances
+   * @param {object} adapter - Platform adapter
+   */
+  function initializeComponents(adapter) {
+    try {
+        // Create component instances
+        const messageDetector = new MessageDetector(adapter);
+        const anchorGenerator = new AnchorGenerator();
+        const anchorUI = new AnchorUI(adapter);
+        const scrollNavigator = new ScrollNavigator(adapter);
+        const anchorInjector = new AnchorInjector(adapter);
+
+        // Initialize the anchor injector with all components
+        anchorInjector.initialize(messageDetector, anchorGenerator, anchorUI, scrollNavigator);
+
+          log('Extension initialized successfully');
+
+        // Store reference globally for debugging
+        window.__scrollback = {
+          router: platformRouter,
+          injector: anchorInjector,
+          detector: messageDetector,
+          generator: anchorGenerator,
+          ui: anchorUI,
+          navigator: scrollNavigator,
+          adapter: adapter,
+          debug: DEBUG
+        };
 
       // Set up navigation listener to detect chat switching
       setupNavigationListener(anchorInjector);
 
     } catch (err) {
-      error('Failed to initialize extension:', err);
+      error('Failed to initialize components:', err);
     }
   }
 
