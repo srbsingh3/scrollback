@@ -18,6 +18,9 @@ class AnchorUI {
     // Throttling for tooltip hover events (prevents rapid reflows)
     this.lastTooltipTime = 0;
     this.tooltipThrottleMs = 16; // ~60fps max
+
+    // Flag to suppress tooltip after tab visibility change
+    this.suppressTooltip = false;
   }
 
   /**
@@ -52,6 +55,9 @@ class AnchorUI {
     // Set up event delegation on lines container (6 listeners total instead of 6N)
     this.setupEventDelegation();
 
+    // Set up visibility change listener to hide tooltip when tab is hidden
+    this.setupVisibilityListener();
+
     // Inject into document
     document.body.appendChild(this.globalContainer);
     document.body.appendChild(this.tooltip);
@@ -73,6 +79,24 @@ class AnchorUI {
     // Click and keyboard (bubble phase)
     this.linesContainer.addEventListener('click', this.handleLineClick.bind(this));
     this.linesContainer.addEventListener('keydown', this.handleLineKeydown.bind(this));
+  }
+
+  /**
+   * Set up visibility change listener to hide tooltip when tab becomes hidden
+   * Fixes issue where tooltip persists when switching tabs
+   */
+  setupVisibilityListener() {
+    // Hide tooltip and suppress it when tab visibility changes
+    document.addEventListener('visibilitychange', () => {
+      this.hideTooltip();
+      this.suppressTooltip = true;
+
+      // Add ONE-TIME mousemove listener to clear suppression
+      // Listener auto-removes after first mouse movement (zero performance impact during normal use)
+      document.addEventListener('mousemove', () => {
+        this.suppressTooltip = false;
+      }, { once: true, passive: true });
+    });
   }
 
   /**
@@ -236,6 +260,9 @@ class AnchorUI {
    */
   showTooltip(line, anchorId) {
     if (!this.tooltip) return;
+
+    // Don't show tooltip if suppressed (e.g., after tab visibility change)
+    if (this.suppressTooltip) return;
 
     const anchorData = this.anchors.get(anchorId);
     if (!anchorData || !anchorData.element) return;
