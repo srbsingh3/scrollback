@@ -113,6 +113,7 @@
 
   /**
    * Set up listener for navigation/URL changes to handle chat switching
+   * Uses Page Visibility API to pause polling when tab is hidden (resource optimization)
    * @param {object} anchorInjector - The anchor injector instance
    */
   function setupNavigationListener(anchorInjector) {
@@ -159,19 +160,43 @@
     // Listen for popstate events (back/forward navigation)
     window.addEventListener('popstate', handleUrlChange);
 
-    // Use lightweight polling instead of document-wide MutationObserver
-    // This is much more performant than observing all DOM changes
-    urlCheckInterval = setInterval(() => {
-      if (location.href !== lastUrl) {
-        handleUrlChange();
+    // Visibility-aware polling functions (zero CPU when tab hidden)
+    const startPolling = () => {
+      if (!urlCheckInterval) {
+        urlCheckInterval = setInterval(() => {
+          if (location.href !== lastUrl) {
+            handleUrlChange();
+          }
+        }, 500);
       }
-    }, 500); // Check every 500ms - responsive enough for navigation
+    };
+
+    const stopPolling = () => {
+      if (urlCheckInterval) {
+        clearInterval(urlCheckInterval);
+        urlCheckInterval = null;
+      }
+    };
+
+    // Pause polling when tab is hidden, resume when visible
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        // Check immediately on visibility restore in case URL changed
+        if (location.href !== lastUrl) {
+          handleUrlChange();
+        }
+        startPolling();
+      }
+    });
+
+    // Start initial polling
+    startPolling();
 
     // Clean up interval if page unloads
     window.addEventListener('beforeunload', () => {
-      if (urlCheckInterval) {
-        clearInterval(urlCheckInterval);
-      }
+      stopPolling();
     });
   }
 

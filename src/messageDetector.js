@@ -18,6 +18,16 @@ class MessageDetector {
     this.messages = new Map(); // Map of element -> message data
     this.observer = null;
     this.onMessagesChanged = null; // Callback for when messages change
+
+    // Store observer config for reconnection after visibility change
+    this.observerConfig = {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['data-message-id'],
+      characterData: false
+    };
+    this.isObserving = false;
   }
 
   /**
@@ -106,6 +116,7 @@ class MessageDetector {
 
   /**
    * Set up MutationObserver to watch for new messages
+   * Includes visibility-aware pausing for resource optimization
    */
   setupObserver() {
     const containerSelector = this.adapter.getContainerSelector();
@@ -119,7 +130,7 @@ class MessageDetector {
     // Debounce function to avoid excessive callbacks
     // Use longer delay to reduce CPU usage during streaming
     let debounceTimer = null;
-    const debouncedDetect = () => {
+    this.debouncedDetect = () => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         this.detectExistingMessages();
@@ -128,17 +139,66 @@ class MessageDetector {
       }, 150); // 150ms to reduce callback frequency
     };
 
-    this.observer = new MutationObserver(debouncedDetect);
+    this.observer = new MutationObserver(this.debouncedDetect);
 
-    // Optimized observer config - removed characterData for better performance
-    // Messages are detected via childList changes anyway
-    this.observer.observe(container, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['data-message-id'], // Only watch message ID changes
-      characterData: false // Disabled - too expensive during streaming
+    // Start observing
+    this.startObserving(container);
+
+    // Set up visibility-aware observer pausing (zero overhead when tab hidden)
+    this.setupVisibilityHandler();
+  }
+
+  /**
+   * Start observing the container
+   * @param {Element} container - Container element to observe
+   */
+  startObserving(container) {
+    if (!this.observer || !container) return;
+
+    this.observer.observe(container, this.observerConfig);
+    this.isObserving = true;
+    MessageDetector.log('Observer started');
+  }
+
+  /**
+   * Stop observing (disconnect observer)
+   */
+  stopObserving() {
+    if (this.observer) {
+      this.observer.disconnect();
+      this.isObserving = false;
+      MessageDetector.log('Observer paused');
+    }
+  }
+
+  /**
+   * Set up visibility change handler to pause/resume observer
+   */
+  setupVisibilityHandler() {
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        // Tab hidden - pause observer to save resources
+        this.stopObserving();
+      } else {
+        // Tab visible - resume observing
+        this.reconnectObserver();
+      }
     });
+  }
+
+  /**
+   * Reconnect observer after visibility restore
+   */
+  reconnectObserver() {
+    const containerSelector = this.adapter.getContainerSelector();
+    const container = document.querySelector(containerSelector);
+
+    if (container && this.observer && !this.isObserving) {
+      this.startObserving(container);
+      // Re-detect in case messages changed while hidden
+      this.detectExistingMessages();
+      this.cleanupRemovedMessages();
+    }
   }
 
   /**
@@ -218,8 +278,8 @@ class MessageDetector {
 
     // Disconnect and reconnect the observer to ensure it's watching the correct container
     if (this.observer) {
-      this.observer.disconnect();
-      this.setupObserver();
+      this.stopObserving();
+      this.reconnectObserver();
     }
   }
 
@@ -227,12 +287,11 @@ class MessageDetector {
    * Destroy the message detector and clean up
    */
   destroy() {
-    if (this.observer) {
-      this.observer.disconnect();
-      this.observer = null;
-    }
+    this.stopObserving();
+    this.observer = null;
     this.messages.clear();
     this.onMessagesChanged = null;
+    this.debouncedDetect = null;
   }
 }
 

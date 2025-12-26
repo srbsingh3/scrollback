@@ -10,10 +10,14 @@ class AnchorUI {
     this.globalContainer = null;
     this.linesContainer = null;
     this.tooltip = null; // Global tooltip element (portal)
-    this.messageLines = new Map(); // anchorId -> line element
-    this.messageElements = new Map(); // anchorId -> message element
-    this.messageTexts = new Map(); // anchorId -> preview text
-    this.clickHandlers = new Map(); // anchorId -> handler function
+
+    // Consolidated single Map for all anchor data (memory optimization)
+    // anchorId -> { line, element, handler }
+    this.anchors = new Map();
+
+    // Throttling for tooltip hover events (prevents rapid reflows)
+    this.lastTooltipTime = 0;
+    this.tooltipThrottleMs = 16; // ~60fps max
   }
 
   /**
@@ -45,9 +49,109 @@ class AnchorUI {
     // Apply theme
     this.applyTheme();
 
+    // Set up event delegation on lines container (6 listeners total instead of 6N)
+    this.setupEventDelegation();
+
     // Inject into document
     document.body.appendChild(this.globalContainer);
     document.body.appendChild(this.tooltip);
+  }
+
+  /**
+   * Set up event delegation for all line interactions
+   * Uses capture phase for mouseenter/mouseleave to properly delegate
+   */
+  setupEventDelegation() {
+    // Mouse events (capture phase for enter/leave delegation)
+    this.linesContainer.addEventListener('mouseenter', this.handleLineMouseEnter.bind(this), true);
+    this.linesContainer.addEventListener('mouseleave', this.handleLineMouseLeave.bind(this), true);
+
+    // Focus events (capture phase)
+    this.linesContainer.addEventListener('focus', this.handleLineFocus.bind(this), true);
+    this.linesContainer.addEventListener('blur', this.handleLineBlur.bind(this), true);
+
+    // Click and keyboard (bubble phase)
+    this.linesContainer.addEventListener('click', this.handleLineClick.bind(this));
+    this.linesContainer.addEventListener('keydown', this.handleLineKeydown.bind(this));
+  }
+
+  /**
+   * Get anchor ID from a line element
+   * @param {Element} target - Event target
+   * @returns {string|null} Anchor ID or null
+   */
+  getAnchorIdFromTarget(target) {
+    const line = target.closest('.scrollback-anchor-line');
+    return line ? line.getAttribute('data-anchor-id') : null;
+  }
+
+  /**
+   * Handle delegated mouseenter on lines
+   */
+  handleLineMouseEnter(e) {
+    if (!e.target.classList.contains('scrollback-anchor-line')) return;
+
+    // Throttle to prevent rapid reflows
+    const now = Date.now();
+    if (now - this.lastTooltipTime < this.tooltipThrottleMs) return;
+    this.lastTooltipTime = now;
+
+    const anchorId = this.getAnchorIdFromTarget(e.target);
+    if (anchorId) this.showTooltip(e.target, anchorId);
+  }
+
+  /**
+   * Handle delegated mouseleave on lines
+   */
+  handleLineMouseLeave(e) {
+    if (!e.target.classList.contains('scrollback-anchor-line')) return;
+    this.hideTooltip();
+  }
+
+  /**
+   * Handle delegated focus on lines
+   */
+  handleLineFocus(e) {
+    if (!e.target.classList.contains('scrollback-anchor-line')) return;
+    const anchorId = this.getAnchorIdFromTarget(e.target);
+    if (anchorId) this.showTooltip(e.target, anchorId);
+  }
+
+  /**
+   * Handle delegated blur on lines
+   */
+  handleLineBlur(e) {
+    if (!e.target.classList.contains('scrollback-anchor-line')) return;
+    this.hideTooltip();
+  }
+
+  /**
+   * Handle delegated click on lines
+   */
+  handleLineClick(e) {
+    const anchorId = this.getAnchorIdFromTarget(e.target);
+    if (!anchorId) return;
+
+    const anchorData = this.anchors.get(anchorId);
+    if (anchorData && anchorData.handler) {
+      anchorData.handler(e);
+    }
+  }
+
+  /**
+   * Handle delegated keydown on lines
+   */
+  handleLineKeydown(e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+
+    const anchorId = this.getAnchorIdFromTarget(e.target);
+    if (!anchorId) return;
+
+    e.preventDefault();
+    const anchorData = this.anchors.get(anchorId);
+    if (anchorData && anchorData.handler) {
+      anchorData.handler(e);
+    }
   }
 
   /**
@@ -63,8 +167,8 @@ class AnchorUI {
     }
 
     // Check if line already exists
-    if (this.messageLines.has(anchorId)) {
-      return this.messageLines.get(anchorId);
+    if (this.anchors.has(anchorId)) {
+      return this.anchors.get(anchorId).line;
     }
 
     // Create line element
@@ -75,23 +179,15 @@ class AnchorUI {
     line.setAttribute('aria-label', 'Navigate to message');
     line.setAttribute('tabindex', '0');
 
-    // Extract and store message text for tooltip
-    const messageText = this.extractMessageText(messageElement);
-
     // Add to container
     this.linesContainer.appendChild(line);
 
-    // Store references
-    this.messageLines.set(anchorId, line);
-    this.messageElements.set(anchorId, messageElement);
-    this.messageTexts.set(anchorId, messageText);
-    this.clickHandlers.set(anchorId, clickHandler);
-
-    // Add click handler
-    this.addClickHandler(line, clickHandler);
-
-    // Add hover handlers for tooltip
-    this.addTooltipHandlers(line, anchorId);
+    // Store consolidated reference (no per-line listeners needed - using delegation)
+    this.anchors.set(anchorId, {
+      line,
+      element: messageElement,
+      handler: clickHandler
+    });
 
     // Update visibility to ensure container is shown
     this.updateVisibility();
@@ -133,39 +229,19 @@ class AnchorUI {
   }
 
   /**
-   * Add hover handlers for tooltip display
-   * @param {Element} line - Line element
-   * @param {string} anchorId - Anchor ID for this line
-   */
-  addTooltipHandlers(line, anchorId) {
-    line.addEventListener('mouseenter', () => {
-      this.showTooltip(line, anchorId);
-    });
-
-    line.addEventListener('mouseleave', () => {
-      this.hideTooltip();
-    });
-
-    // Also handle focus for keyboard users
-    line.addEventListener('focus', () => {
-      this.showTooltip(line, anchorId);
-    });
-
-    line.addEventListener('blur', () => {
-      this.hideTooltip();
-    });
-  }
-
-  /**
    * Show tooltip positioned next to the given line
+   * Extracts text on-demand instead of storing (memory optimization)
    * @param {Element} line - Line element to position tooltip near
-   * @param {string} anchorId - Anchor ID to get message text
+   * @param {string} anchorId - Anchor ID to get message element
    */
   showTooltip(line, anchorId) {
     if (!this.tooltip) return;
 
-    const messageText = this.messageTexts.get(anchorId);
-    if (!messageText) return;
+    const anchorData = this.anchors.get(anchorId);
+    if (!anchorData || !anchorData.element) return;
+
+    // Extract text on-demand (not pre-stored)
+    const messageText = this.extractMessageText(anchorData.element);
 
     // Set content
     this.tooltip.textContent = messageText;
@@ -217,14 +293,11 @@ class AnchorUI {
    * @param {string} anchorId - Anchor ID
    */
   removeMessageLine(anchorId) {
-    const line = this.messageLines.get(anchorId);
-    if (line && line.parentNode) {
-      line.parentNode.removeChild(line);
+    const anchorData = this.anchors.get(anchorId);
+    if (anchorData && anchorData.line && anchorData.line.parentNode) {
+      anchorData.line.parentNode.removeChild(anchorData.line);
     }
-    this.messageLines.delete(anchorId);
-    this.messageElements.delete(anchorId);
-    this.messageTexts.delete(anchorId);
-    this.clickHandlers.delete(anchorId);
+    this.anchors.delete(anchorId);
 
     // Hide container if no lines left
     this.updateVisibility();
@@ -237,7 +310,7 @@ class AnchorUI {
     if (!this.globalContainer) return;
 
     // Hide if no messages, show otherwise
-    if (this.messageLines.size === 0) {
+    if (this.anchors.size === 0) {
       this.globalContainer.style.display = 'none';
     } else {
       this.globalContainer.style.display = 'flex';
@@ -271,29 +344,13 @@ class AnchorUI {
   }
 
   /**
-   * Add click handler to a line
-   * @param {Element} line - Line element
-   * @param {Function} handler - Click handler function
-   */
-  addClickHandler(line, handler) {
-    line.addEventListener('click', handler);
-
-    // Add keyboard support
-    line.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        handler(e);
-      }
-    });
-  }
-
-  /**
    * Get line element by anchor ID
    * @param {string} anchorId - Anchor ID
    * @returns {Element|null} Line element or null
    */
   getLineElement(anchorId) {
-    return this.messageLines.get(anchorId) || null;
+    const anchorData = this.anchors.get(anchorId);
+    return anchorData ? anchorData.line : null;
   }
 
   /**
@@ -302,20 +359,20 @@ class AnchorUI {
    * @returns {boolean} True if line exists
    */
   hasLine(anchorId) {
-    return this.messageLines.has(anchorId);
+    return this.anchors.has(anchorId);
   }
 
   /**
    * Remove all lines and clear state
    */
   clear() {
-    this.messageLines.forEach((line, anchorId) => {
-      this.removeMessageLine(anchorId);
+    // Remove all line elements from DOM
+    this.anchors.forEach((anchorData, anchorId) => {
+      if (anchorData.line && anchorData.line.parentNode) {
+        anchorData.line.parentNode.removeChild(anchorData.line);
+      }
     });
-    this.messageLines.clear();
-    this.messageElements.clear();
-    this.messageTexts.clear();
-    this.clickHandlers.clear();
+    this.anchors.clear();
 
     // Remove global container
     if (this.globalContainer && this.globalContainer.parentNode) {
@@ -336,7 +393,7 @@ class AnchorUI {
    * @returns {number} Number of lines
    */
   getLineCount() {
-    return this.messageLines.size;
+    return this.anchors.size;
   }
 
   /**
