@@ -152,6 +152,38 @@
   }
 
   /**
+   * Wait for Claude.ai chat to be ready after navigation (faster than initial load)
+   * @param {Function} callback - Called when ready
+   */
+  function waitForClaudeChatReady(callback) {
+    // After navigation, we use a faster check since the page structure already exists
+    // Just wait for messages to appear
+    const messageSelector = '[data-testid="user-message"]';
+    let checkCount = 0;
+    const maxChecks = 10; // Max 5 seconds (10 * 500ms)
+
+    const checkReady = () => {
+      const messages = document.querySelectorAll(messageSelector);
+      checkCount++;
+
+      if (messages.length > 0) {
+        // Messages found - ready to detect
+        callback();
+      } else if (checkCount < maxChecks) {
+        // No messages yet - wait and try again
+        setTimeout(checkReady, 500);
+      } else {
+        // Timeout - no messages found, but initialize anyway (might be a new empty chat)
+        log('No messages found after chat switch - initializing anyway');
+        callback();
+      }
+    };
+
+    // Start checking immediately (no initial delay for chat switches)
+    checkReady();
+  }
+
+  /**
    * Initialize component instances
    * @param {object} adapter - Platform adapter
    */
@@ -204,20 +236,37 @@
 
       if (currentUrl !== lastUrl) {
         lastUrl = currentUrl;
+        log('URL changed - reinitializing for new chat');
 
         // Invalidate scroll container cache when navigating
         if (window.__scrollback?.adapter?.invalidateScrollContainerCache) {
           window.__scrollback.adapter.invalidateScrollContainerCache();
         }
 
-        // Clear existing anchors and reinitialize detection
-        // Give the SPA time to update the DOM
-        setTimeout(() => {
-          if (anchorInjector) {
-            anchorInjector.clearAllAnchors();
-            anchorInjector.messageDetector.detectExistingMessages();
-          }
-        }, 800);
+        // Clear existing anchors immediately
+        if (anchorInjector) {
+          anchorInjector.clearAllAnchors();
+        }
+
+        // For Claude, wait for DOM to stabilize after navigation
+        // For other platforms, use a simple delay
+        const isClaude = window.__scrollback?.adapter?.getPlatformName() === 'Claude';
+
+        if (isClaude) {
+          waitForClaudeChatReady(() => {
+            if (anchorInjector) {
+              log('Chat ready after navigation - detecting messages');
+              anchorInjector.messageDetector.detectExistingMessages();
+            }
+          });
+        } else {
+          // ChatGPT and other platforms - simple delay
+          setTimeout(() => {
+            if (anchorInjector) {
+              anchorInjector.messageDetector.detectExistingMessages();
+            }
+          }, 800);
+        }
       }
     };
 
