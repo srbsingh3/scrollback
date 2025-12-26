@@ -128,19 +128,18 @@
 /* Portal-based Tooltip (appended to body, not affected by container overflow) */
 .scrollback-anchor-tooltip {
   position: fixed;
-  max-width: 300px;
+  max-width: 200px;
   padding: 8px 12px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.4;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   pointer-events: none; /* Don't interfere with mouse events */
   opacity: 0;
-  transition: opacity 0.15s ease-in-out;
+  /* transition: opacity 0.15s ease-in-out; */
   z-index: 10000; /* High z-index since it's a portal */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* Show tooltip when visible class is added */
