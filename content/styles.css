@@ -153,10 +153,21 @@
   color: #1f2937; /* Gray-800 */
 }
 
+/* Claude-specific Light Theme Tooltip */
+body.scrollback-platform-claude .scrollback-anchor-tooltip.scrollback-tooltip-light {
+  background-color: #F0EEE6;
+}
+
 /* Dark Theme Tooltip */
 .scrollback-anchor-tooltip.scrollback-tooltip-dark {
   background-color: #303030;
   color: #f9fafb; /* Gray-50 */
+}
+
+/* Claude-specific Dark Theme Tooltip */
+body.scrollback-platform-claude .scrollback-anchor-tooltip.scrollback-tooltip-dark {
+  background-color: #141413 !important;
+  color: #ffffff !important;
 }
 
 /* Ensure lines don't interfere with text selection */

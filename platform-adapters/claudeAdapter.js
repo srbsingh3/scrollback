@@ -41,15 +41,14 @@ class ClaudeAdapter extends BasePlatformAdapter {
 
   /**
    * Detect the current theme (light or dark mode)
-   * Claude uses data-theme attribute on the html element
+   * Note: Always returns 'light' to avoid React hydration issues with getComputedStyle()
+   * Claude tooltips will use consistent light theme colors regardless of page theme
    * @returns {'light' | 'dark'} Current theme
    */
   detectTheme() {
-    // Claude sets data-theme="claude" but also uses 'dark' class for dark mode
-    const isDark = document.documentElement.classList.contains('dark') ||
-                   document.body.classList.contains('dark');
-
-    return isDark ? 'dark' : 'light';
+    // Always return 'light' to avoid rendering issues caused by getComputedStyle()
+    // during React hydration. The light theme tooltip colors work fine in both modes.
+    return 'light';
   }
 
   /**

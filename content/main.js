@@ -189,6 +189,11 @@
    */
   function initializeComponents(adapter) {
     try {
+        // Add platform-specific class to body for platform-specific styling
+        const platformName = adapter.getPlatformName().toLowerCase();
+        document.body.classList.add(`scrollback-platform-${platformName}`);
+        log(`Added platform class: scrollback-platform-${platformName}`);
+
         // Create component instances
         const messageDetector = new MessageDetector(adapter);
         const anchorGenerator = new AnchorGenerator();
