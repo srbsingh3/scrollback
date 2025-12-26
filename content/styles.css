@@ -149,16 +149,14 @@
 
 /* Light Theme Tooltip */
 .scrollback-anchor-tooltip.scrollback-tooltip-light {
-  background-color: #ffffff;
+  background-color: #F4F4F4;
   color: #1f2937; /* Gray-800 */
-  border: 1px solid #e5e7eb; /* Gray-200 */
 }
 
 /* Dark Theme Tooltip */
 .scrollback-anchor-tooltip.scrollback-tooltip-dark {
-  background-color: #1f2937; /* Gray-800 */
+  background-color: #303030;
   color: #f9fafb; /* Gray-50 */
-  border: 1px solid #374151; /* Gray-700 */
 }
 
 /* Ensure lines don't interfere with text selection */
