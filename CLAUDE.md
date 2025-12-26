@@ -73,6 +73,12 @@ Refer to `TASKS.md` for detailed task breakdown. High-level phases:
 
 ## Development Guidelines
 
+### ⚠️ IMPORTANT: ChatGPT Code is Production-Ready
+**DO NOT modify existing ChatGPT implementation code** (`chatgpt.js`, ChatGPT-specific selectors, or any working ChatGPT functionality) when implementing Claude AI support or other platform adapters. The ChatGPT implementation is finalized and fully functional. All new platform work should:
+- Only add new adapter files (e.g., `claude.js`)
+- Only modify shared/core logic if absolutely necessary and well-justified
+- Follow the existing ChatGPT adapter as a reference pattern, but don't change it
+
 ### When Implementing Platform Adapters
 Each adapter must implement:
 ```javascript
@@ -120,10 +126,10 @@ Each adapter must implement:
 
 ## Project Status
 
-**Current Stage**: Planning - No implementation code yet. Start with Phase 0 (project setup) from TASKS.md.
+**Current Stage**: Phase 1 Complete ✅ - ChatGPT implementation is fully functional and production-ready.
 
-When beginning implementation:
-1. Create `manifest.json` with minimal permissions
-2. Set up directory structure (`src/`, `content/`, `platform-adapters/`)
-3. Start with ChatGPT platform adapter (Phase 1)
-4. Test thoroughly before adding Claude support (Phase 2)
+**Next Steps**: Phase 2 - Add Claude AI platform support
+1. Create new `claude.js` adapter following the ChatGPT pattern
+2. **DO NOT modify existing ChatGPT code** - it's finalized
+3. Test Claude adapter thoroughly in isolation
+4. Ensure both platforms work independently without interference
