@@ -1,10 +1,10 @@
 # Scrollback
 
-A lightweight Chrome extension that adds Notion-style anchor indicators to AI chat conversations (ChatGPT, Claude) for quick navigation through long threads.
+A lightweight Chrome extension that adds visual anchor indicators to AI chat conversations (ChatGPT, Claude) for quick navigation through long threads.
 
 ## Features
 
-- **Notion-Style Anchors**: Subtle hover-activated anchor indicators on the right side of messages
+- **Visual Anchor Navigation**: Subtle hover-activated anchor indicators on the right side of user messages
 - **Quick Navigation**: Click anchors to smoothly scroll to any message in long conversations
 - **Multi-Platform Support**: Works on both ChatGPT and Claude
 - **Privacy-First**: Zero data collection, no network requests, no storage
@@ -114,12 +114,20 @@ Each platform (ChatGPT, Claude) has its own adapter implementing this interface,
 
 ### Manual Testing Checklist
 
-- [ ] Fresh conversations vs. existing long threads
-- [ ] Streaming responses (partial message updates)
-- [ ] Message regeneration and editing
-- [ ] Both light and dark themes
-- [ ] Code blocks, images, tables in messages
-- [ ] Very short and very long messages
+- [ ] **ChatGPT**: Fresh conversations vs. existing long threads
+- [ ] **ChatGPT**: Streaming responses (partial message updates)
+- [ ] **ChatGPT**: Message regeneration and editing
+- [ ] **ChatGPT**: Both light and dark themes
+- [ ] **ChatGPT**: Code blocks, images, tables in messages
+- [ ] **ChatGPT**: Very short and very long messages
+- [ ] **Claude**: Fresh conversations vs. existing long threads
+- [ ] **Claude**: Streaming responses (partial message updates)
+- [ ] **Claude**: Message regeneration and editing
+- [ ] **Claude**: Both light and dark themes
+- [ ] **Claude**: Code blocks, images, tables in messages
+- [ ] **Claude**: Very short and very long messages
+- [ ] **Both**: Chat navigation/switching between conversations
+- [ ] **Both**: Browser refresh and page reload
 
 ### Browser Compatibility
 
@@ -137,7 +145,20 @@ MIT License - see LICENSE file for details
 
 ## Project Status
 
-**Current Phase**: Phase 0 - Project Setup ✅
-**Next Phase**: Phase 1 - Core Functionality (ChatGPT)
+**Phase 0**: Project Setup ✅ **COMPLETE**
+**Phase 1**: Core Functionality (ChatGPT) ✅ **COMPLETE**
+**Phase 2**: Multi-Platform Support (ChatGPT + Claude) ✅ **COMPLETE**
+**Phase 3**: Polish & Optimization ✅ **COMPLETE**
+
+**Current Phase**: Phase 4 - Testing & Release
 
 See [TASKS.md](TASKS.md) for detailed implementation roadmap.
+
+### Recent Achievements
+
+- ✅ Full ChatGPT support with visual anchor indicators
+- ✅ Full Claude.ai support with React hydration handling
+- ✅ Platform adapter architecture for easy extensibility
+- ✅ Automatic chat navigation detection
+- ✅ Platform-specific theming (including Claude tooltip colors)
+- ✅ Privacy-first implementation (zero data collection, no network requests)

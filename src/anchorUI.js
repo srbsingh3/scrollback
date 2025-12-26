@@ -1,6 +1,6 @@
 /**
  * Anchor UI Module
- * Creates and manages a global sticky Notion-style anchor indicator
+ * Creates and manages a global sticky visual anchor indicator
  * with one line per message for navigation
  */
 

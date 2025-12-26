@@ -33,7 +33,7 @@
   - [x] Handle message edits and regenerations
 
 ### 1.3 Anchor UI Components
-- [x] Create Notion-style anchor visual component
+- [x] Create visual anchor component
   - [x] Build HTML structure for anchor indicator (3-6 horizontal lines)
   - [x] Implement CSS for thin horizontal lines design
   - [x] Add positioning logic (right side of message blocks)
@@ -100,16 +100,19 @@
   - [x] Theme detection for ChatGPT
 
 ### 2.3 Claude Adapter
-- [ ] Research Claude (claude.ai) DOM structure
-  - [ ] Identify message container selectors
-  - [ ] Identify conversation container
-  - [ ] Determine theme detection approach
+- [x] Research Claude (claude.ai) DOM structure
+  - [x] Identify message container selectors
+  - [x] Identify conversation container
+  - [x] Determine theme detection approach
 
-- [ ] Implement Claude platform adapter
-  - [ ] Message selector strategy
-  - [ ] Container identification
-  - [ ] Scroll offset calculations
-  - [ ] Theme detection for Claude
+- [x] Implement Claude platform adapter
+  - [x] Message selector strategy
+  - [x] Container identification
+  - [x] Scroll offset calculations
+  - [x] Theme detection for Claude
+  - [x] Implement React hydration handling (prevent error #418)
+  - [x] Add scrollable container detection
+  - [x] Implement chat navigation support
 
 ### 2.4 Platform Router
 - [x] Create platform routing logic
@@ -123,41 +126,41 @@
 ## Phase 3: Polish & Optimization
 
 ### 3.1 Visual Refinement
-- [ ] Fine-tune Notion-style anchor design
-  - [ ] Adjust line thickness and spacing
-  - [ ] Refine opacity values for default/hover states
-  - [ ] Test with both light and dark modes on both platforms
-  - [ ] Ensure visual consistency across platforms
+- [x] Fine-tune visual anchor design
+  - [x] Adjust line thickness and spacing
+  - [x] Refine opacity values for default/hover states
+  - [x] Test with both light and dark modes on both platforms
+  - [x] Ensure visual consistency across platforms
 
 ### 3.2 Performance Optimization
-- [ ] Profile extension performance
-  - [ ] Measure hover interaction latency
-  - [ ] Optimize MutationObserver callbacks
-  - [ ] Minimize reflows and repaints
-  - [ ] Test with very long conversations (100+ messages)
+- [x] Profile extension performance
+  - [x] Measure hover interaction latency
+  - [x] Optimize MutationObserver callbacks
+  - [x] Minimize reflows and repaints
+  - [x] Test with very long conversations (100+ messages)
 
-- [ ] Memory optimization
-  - [ ] Clean up observers when not needed
-  - [ ] Remove anchors for off-screen messages (if needed)
-  - [ ] Test for memory leaks
+- [x] Memory optimization
+  - [x] Clean up observers when not needed
+  - [x] Remove anchors for off-screen messages (if needed)
+  - [x] Test for memory leaks
 
 ### 3.3 Edge Case Handling
-- [ ] Test and fix edge cases
-  - [ ] Message regeneration (ChatGPT)
-  - [ ] Message editing
-  - [ ] Conversation branching (if applicable)
-  - [ ] Code blocks with syntax highlighting
-  - [ ] Messages with embedded images
-  - [ ] Messages with tables or complex formatting
-  - [ ] Very short messages
-  - [ ] Very long messages (multi-screen)
+- [x] Test and fix edge cases
+  - [x] Message regeneration (ChatGPT)
+  - [x] Message editing
+  - [x] Conversation branching (if applicable)
+  - [x] Code blocks with syntax highlighting
+  - [x] Messages with embedded images
+  - [x] Messages with tables or complex formatting
+  - [x] Very short messages
+  - [x] Very long messages (multi-screen)
 
 ### 3.4 Error Handling & Resilience
-- [ ] Implement robust error handling
-  - [ ] Graceful failure if selectors break
-  - [ ] Console error suppression (no noise)
-  - [ ] Automatic retry logic for failed anchor injection
-  - [ ] Version compatibility checks
+- [x] Implement robust error handling
+  - [x] Graceful failure if selectors break
+  - [x] Console error suppression (no noise)
+  - [x] Automatic retry logic for failed anchor injection
+  - [x] Version compatibility checks
 
 ---
 
@@ -231,11 +234,11 @@
 ## Notes
 
 ### Development Workflow
-1. Complete Phase 0 and Phase 1 with ChatGPT support only
-2. Test thoroughly on ChatGPT before moving to Phase 2
-3. Add Claude support in Phase 2
-4. Polish and optimize in Phase 3
-5. Test and release in Phase 4
+1. ✅ Complete Phase 0 and Phase 1 with ChatGPT support only
+2. ✅ Test thoroughly on ChatGPT before moving to Phase 2
+3. ✅ Add Claude support in Phase 2
+4. ✅ Polish and optimize in Phase 3
+5. 🔄 Test and release in Phase 4 (CURRENT)
 
 ### Success Metrics
 - Anchors appear for all messages consistently

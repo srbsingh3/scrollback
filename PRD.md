@@ -2,7 +2,7 @@
 
 ## Overview
 
-A lightweight Chrome extension that adds Notion-style anchor indicators to AI chat conversations, enabling quick navigation through long threads without modifying content or requiring backend infrastructure.
+A lightweight Chrome extension that adds visual anchor indicators to AI chat conversations, enabling quick navigation through long threads without modifying content or requiring backend infrastructure.
 
 ## Goals
 
@@ -36,14 +36,14 @@ A lightweight Chrome extension that adds Notion-style anchor indicators to AI ch
 - Preserve anchors when conversation updates
 
 ### UX & Design
-- **Minimalist visual design** - thin line or handle similar to Notion blocks
+- **Minimalist visual design** - thin horizontal lines for clean, unobtrusive navigation
 - **Hover activation** - anchors invisible by default, appear on hover
 - **Native integration** - blend with platform's existing design language
 - **Non-intrusive** - no interference with text selection, copy/paste, or input
 - **Graceful degradation** - fail silently if DOM structure changes
 
-#### Design Reference: Notion-Style Anchors
-Based on Notion's anchor link pattern (see screenshot reference):
+#### Visual Anchor Design
+Clean, minimal anchor indicators for quick message navigation:
 - **Visual Style**: Thin horizontal lines (similar to hamburger menu icon)
 - **Positioning**: Anchors appear on the right side of messages/blocks
 - **Appearance**: Subtle, semi-transparent lines that become more visible on hover

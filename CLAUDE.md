@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Scrollback** is a lightweight Chrome extension that adds Notion-style anchor indicators to AI chat conversations (ChatGPT, Claude) for quick navigation through long threads. This is a privacy-first, content-script-only extension with zero data collection.
+**Scrollback** is a lightweight Chrome extension that adds visual anchor indicators to AI chat conversations (ChatGPT, Claude) for quick navigation through long threads. This is a privacy-first, content-script-only extension with zero data collection.
 
 ## Core Architecture Principles
 
@@ -34,7 +34,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Design Requirements
 
-### Notion-Style Anchor UI
+### Visual Anchor UI Design
 - **Visual**: 3-6 thin horizontal lines (hamburger menu style)
 - **Position**: Right side of messages
 - **Behavior**: Hidden by default, fade-in on hover (<100ms)

@@ -1,6 +1,6 @@
 /**
  * Scrollback - Content Script Entry Point
- * Adds Notion-style anchor indicators to AI chat conversations
+ * Adds visual anchor indicators to AI chat conversations for quick navigation
  */
 
 (function() {
