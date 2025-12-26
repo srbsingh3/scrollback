@@ -250,7 +250,7 @@ class AnchorUI {
     const lineRect = line.getBoundingClientRect();
 
     // Position tooltip to the left of the line, vertically centered
-    const tooltipX = lineRect.left - 10; // 10px gap from line
+    const tooltipX = lineRect.left - 14; // 16px gap from line
     const tooltipY = lineRect.top + (lineRect.height / 2);
 
     // Apply positioning (right edge of tooltip at tooltipX)
