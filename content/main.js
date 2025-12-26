@@ -86,11 +86,10 @@
       if (isClaude) {
         log('Claude platform detected - waiting for React hydration...');
 
-        // Use requestIdleCallback for better performance (initializes when browser is idle)
-        // Falls back to setTimeout if not supported
-        const initWhenReady = window.requestIdleCallback || ((cb) => setTimeout(cb, 500));
-
-        initWhenReady(() => {
+        // For Claude, we need to wait for React to fully hydrate before injecting DOM
+        // This prevents React error #418 on initial page load
+        waitForClaudeReady(() => {
+          log('Claude ready - initializing extension');
           initializeComponents(adapter);
         });
       } else {
@@ -101,6 +100,55 @@
     } catch (err) {
       error('Failed to initialize extension:', err);
     }
+  }
+
+  /**
+   * Wait for Claude.ai to be fully ready (React hydrated + DOM stable)
+   * @param {Function} callback - Called when ready
+   */
+  function waitForClaudeReady(callback) {
+    // Strategy: Wait for the scrollable container to exist AND be stable
+    // This ensures React has finished hydrating and the DOM is ready
+    const scrollableSelector = '.overflow-y-scroll.overflow-x-hidden.pt-6.flex-1';
+    let checkCount = 0;
+    const maxChecks = 20; // Max 10 seconds (20 * 500ms)
+    let lastScrollHeight = 0;
+
+    const checkReady = () => {
+      const scrollable = document.querySelector(scrollableSelector);
+      checkCount++;
+
+      if (!scrollable) {
+        // Container doesn't exist yet - wait and try again
+        if (checkCount < maxChecks) {
+          setTimeout(checkReady, 500);
+        } else {
+          warn('Claude scrollable container not found after timeout - initializing anyway');
+          callback();
+        }
+        return;
+      }
+
+      // Container exists - check if it's stable (not actively being modified)
+      const currentScrollHeight = scrollable.scrollHeight;
+      if (currentScrollHeight > 0 && currentScrollHeight === lastScrollHeight) {
+        // DOM is stable - safe to initialize
+        callback();
+      } else {
+        // DOM still changing - wait and check again
+        lastScrollHeight = currentScrollHeight;
+        if (checkCount < maxChecks) {
+          setTimeout(checkReady, 500);
+        } else {
+          // Timeout - initialize anyway to avoid hanging
+          log('Claude DOM still changing but timeout reached - initializing');
+          callback();
+        }
+      }
+    };
+
+    // Start checking after a brief initial delay
+    setTimeout(checkReady, 500);
   }
 
   /**
