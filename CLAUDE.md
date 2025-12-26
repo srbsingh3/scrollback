@@ -73,11 +73,26 @@ Refer to `TASKS.md` for detailed task breakdown. High-level phases:
 
 ## Development Guidelines
 
-### ⚠️ IMPORTANT: ChatGPT Code is Production-Ready
-**DO NOT modify existing ChatGPT implementation code** (`chatgpt.js`, ChatGPT-specific selectors, or any working ChatGPT functionality) when implementing Claude AI support or other platform adapters. The ChatGPT implementation is finalized and fully functional. All new platform work should:
-- Only add new adapter files (e.g., `claude.js`)
-- Only modify shared/core logic if absolutely necessary and well-justified
-- Follow the existing ChatGPT adapter as a reference pattern, but don't change it
+### ⚠️ CRITICAL: ChatGPT Implementation is Production-Ready - DO NOT MODIFY
+**The existing ChatGPT implementation is fully functional after 12+ hours of development and testing.**
+
+**PROTECTED FILES - DO NOT MODIFY UNDER ANY CIRCUMSTANCES:**
+- All existing code in `src/` (MessageDetector, AnchorUI, AnchorInjector, ScrollNavigator, etc.)
+- All existing code in `platform-adapters/` (chatgpt.js or similar)
+- All existing code in `content/` (main.js, styles.css, etc.)
+- Any ChatGPT-specific selectors, DOM logic, styling, or helper functions
+
+**When adding Claude.ai support:**
+1. **Assume ChatGPT DOM is different from Claude DOM** - they likely require different approaches
+2. **Create separate Claude-specific components** if the existing "shared" components don't work for Claude
+   - Example: If `MessageDetector` is too ChatGPT-specific, create `ClaudeMessageDetector`
+   - Example: If `AnchorUI` positioning doesn't work, create `ClaudeAnchorUI`
+3. **Duplicate code rather than refactor** - code duplication is acceptable to protect working ChatGPT code
+4. **Only modify `content/main.js`** if absolutely necessary to support both platforms (e.g., conditional component loading)
+5. **Test changes in isolation** - ensure ChatGPT still works exactly as before
+
+**Why this approach:**
+The existing components (MessageDetector, AnchorUI, etc.) were built and tuned for ChatGPT's specific DOM structure. Claude.ai's DOM is likely completely different, requiring different detection logic, positioning, and styling. Rather than risk breaking the working ChatGPT implementation by trying to make components "truly platform-agnostic," create Claude-specific versions.
 
 ### When Implementing Platform Adapters
 Each adapter must implement:
@@ -129,7 +144,9 @@ Each adapter must implement:
 **Current Stage**: Phase 1 Complete ✅ - ChatGPT implementation is fully functional and production-ready.
 
 **Next Steps**: Phase 2 - Add Claude AI platform support
-1. Create new `claude.js` adapter following the ChatGPT pattern
-2. **DO NOT modify existing ChatGPT code** - it's finalized
-3. Test Claude adapter thoroughly in isolation
-4. Ensure both platforms work independently without interference
+1. **DO NOT modify ANY existing code** - ChatGPT implementation is protected
+2. Create Claude-specific components in new files (e.g., `src/claude/` directory)
+3. Create new `claude.js` adapter
+4. Duplicate components rather than refactoring shared code
+5. Only modify `content/main.js` if absolutely required for platform routing
+6. Test that ChatGPT still works exactly as before after any changes
