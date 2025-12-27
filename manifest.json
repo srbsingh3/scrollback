@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Scrollback",
   "version": "1.0",
-  "description": "Adds anchor links to ChatGPT and Claude messages for instant navigation through long conversations",
+  "description": "Instant navigation for long ChatGPT and Claude chats",
   "permissions": [],
   "host_permissions": [
     "https://chatgpt.com/*",
