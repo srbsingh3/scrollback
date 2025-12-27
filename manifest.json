@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Scrollback",
+  "name": "Scrollback – Navigate ChatGPT & Claude Conversations",
   "version": "1.0",
   "description": "Instant navigation for long ChatGPT and Claude chats",
   "permissions": [],
