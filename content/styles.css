@@ -80,7 +80,7 @@
   width: 29px;
   height: 2px;
   border-radius: 9999px;
-  transition: all 0.3s ease-out;
+  transition: all 0.3s cubic-bezier(0, 0, 0.2, 1); /* Material Decelerate */
   transform-origin: right;
 }
 
