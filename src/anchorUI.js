@@ -5,15 +5,20 @@
  */
 
 class AnchorUI {
-  constructor(platformAdapter) {
+  constructor(platformAdapter, favoritesManager) {
     this.adapter = platformAdapter;
+    this.favoritesManager = favoritesManager;
     this.globalContainer = null;
     this.linesContainer = null;
     this.tooltip = null; // Global tooltip element (portal)
+    this.starIcon = null; // Global star icon element (portal)
 
     // Consolidated single Map for all anchor data (memory optimization)
-    // anchorId -> { line, element, handler }
+    // anchorId -> { line, element, handler, isStarred }
     this.anchors = new Map();
+
+    // Current anchor ID for which star is shown
+    this.currentStarAnchorId = null;
 
     // Throttling for tooltip hover events (prevents rapid reflows)
     this.lastTooltipTime = 0;
@@ -21,6 +26,9 @@ class AnchorUI {
 
     // Flag to suppress tooltip after tab visibility change
     this.suppressTooltip = false;
+
+    // Timeout for hiding tooltip (allows hover on tooltip/star)
+    this.hideTooltipTimeout = null;
   }
 
   /**
@@ -49,6 +57,46 @@ class AnchorUI {
     this.tooltip.setAttribute('role', 'tooltip');
     this.tooltip.setAttribute('aria-hidden', 'true');
 
+    // Add hover handlers to tooltip to keep it visible when hovering over it
+    this.tooltip.addEventListener('mouseenter', () => {
+      this.cancelHideTooltip();
+    });
+    this.tooltip.addEventListener('mouseleave', () => {
+      this.scheduleHideTooltip();
+    });
+
+    // Create global star icon element (portal - outside scrollable container)
+    this.starIcon = document.createElement('button');
+    this.starIcon.className = 'scrollback-star-icon';
+    this.starIcon.setAttribute('role', 'button');
+    this.starIcon.setAttribute('aria-label', 'Toggle favorite');
+    this.starIcon.setAttribute('aria-hidden', 'true');
+    this.starIcon.setAttribute('tabindex', '-1'); // Not keyboard accessible when hidden
+    this.starIcon.innerHTML = this.getStarIconSVG(false); // Hollow star by default
+
+    // Handle star click
+    this.starIcon.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent triggering line click
+      this.handleStarClick();
+    });
+
+    // Handle star keyboard interaction
+    this.starIcon.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        e.stopPropagation();
+        this.handleStarClick();
+      }
+    });
+
+    // Add hover handlers to star to keep it visible when hovering over it
+    this.starIcon.addEventListener('mouseenter', () => {
+      this.cancelHideTooltip();
+    });
+    this.starIcon.addEventListener('mouseleave', () => {
+      this.scheduleHideTooltip();
+    });
+
     // Apply theme
     this.applyTheme();
 
@@ -61,6 +109,7 @@ class AnchorUI {
     // Inject into document
     document.body.appendChild(this.globalContainer);
     document.body.appendChild(this.tooltip);
+    document.body.appendChild(this.starIcon);
   }
 
   /**
@@ -129,7 +178,8 @@ class AnchorUI {
    */
   handleLineMouseLeave(e) {
     if (!e.target.classList.contains('scrollback-anchor-line')) return;
-    this.hideTooltip();
+    // Schedule hide with delay to allow mouse to move to tooltip/star
+    this.scheduleHideTooltip();
   }
 
   /**
@@ -153,6 +203,11 @@ class AnchorUI {
    * Handle delegated click on lines
    */
   handleLineClick(e) {
+    // Don't trigger if clicking on star icon
+    if (e.target.closest('.scrollback-star-icon')) {
+      return;
+    }
+
     const anchorId = this.getAnchorIdFromTarget(e.target);
     if (!anchorId) return;
 
@@ -206,11 +261,20 @@ class AnchorUI {
     // Add to container
     this.linesContainer.appendChild(line);
 
+    // Check initial star state (async, don't block)
+    this.checkStarState(anchorId).then(isStarred => {
+      const anchorData = this.anchors.get(anchorId);
+      if (anchorData) {
+        anchorData.isStarred = isStarred;
+      }
+    });
+
     // Store consolidated reference (no per-line listeners needed - using delegation)
     this.anchors.set(anchorId, {
       line,
       element: messageElement,
-      handler: clickHandler
+      handler: clickHandler,
+      isStarred: false // Will be updated async
     });
 
     // Update visibility to ensure container is shown
@@ -293,16 +357,53 @@ class AnchorUI {
     // Show tooltip
     this.tooltip.classList.add('scrollback-tooltip-visible');
     this.tooltip.setAttribute('aria-hidden', 'false');
+
+    // Cancel any pending hide
+    this.cancelHideTooltip();
+
+    // Show and position star icon between line and tooltip
+    this.showStarIcon(line, anchorId);
   }
 
   /**
-   * Hide the tooltip
+   * Schedule hiding the tooltip with a delay
+   * Allows mouse to move to tooltip/star without hiding
+   */
+  scheduleHideTooltip() {
+    // Clear any existing timeout
+    this.cancelHideTooltip();
+
+    // Schedule hide after short delay
+    this.hideTooltipTimeout = setTimeout(() => {
+      this.hideTooltip();
+      this.hideTooltipTimeout = null;
+    }, 150); // 150ms delay to allow mouse movement
+  }
+
+  /**
+   * Cancel scheduled tooltip hide
+   */
+  cancelHideTooltip() {
+    if (this.hideTooltipTimeout) {
+      clearTimeout(this.hideTooltipTimeout);
+      this.hideTooltipTimeout = null;
+    }
+  }
+
+  /**
+   * Hide the tooltip immediately
    */
   hideTooltip() {
     if (!this.tooltip) return;
 
+    // Cancel any pending hide
+    this.cancelHideTooltip();
+
     this.tooltip.classList.remove('scrollback-tooltip-visible');
     this.tooltip.setAttribute('aria-hidden', 'true');
+
+    // Hide star icon
+    this.hideStarIcon();
   }
 
   /**
@@ -413,6 +514,16 @@ class AnchorUI {
       this.tooltip.parentNode.removeChild(this.tooltip);
     }
     this.tooltip = null;
+
+    // Remove star icon
+    if (this.starIcon && this.starIcon.parentNode) {
+      this.starIcon.parentNode.removeChild(this.starIcon);
+    }
+    this.starIcon = null;
+    this.currentStarAnchorId = null;
+
+    // Clear any pending hide timeout
+    this.cancelHideTooltip();
   }
 
   /**
@@ -421,6 +532,156 @@ class AnchorUI {
    */
   getLineCount() {
     return this.anchors.size;
+  }
+
+  /**
+   * Get star icon SVG markup
+   * @param {boolean} filled - Whether star should be filled
+   * @returns {string} SVG markup
+   */
+  getStarIconSVG(filled) {
+    if (filled) {
+      // Filled star (smaller size)
+      return '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+    } else {
+      // Hollow star (outline, smaller size)
+      return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+    }
+  }
+
+  /**
+   * Show star icon positioned between line and tooltip
+   * @param {Element} line - Line element
+   * @param {string} anchorId - Anchor ID
+   */
+  async showStarIcon(line, anchorId) {
+    if (!this.starIcon || !this.favoritesManager) return;
+
+    this.currentStarAnchorId = anchorId;
+
+    // Get star state (check storage)
+    const anchorData = this.anchors.get(anchorId);
+    let isStarred = false;
+
+    if (anchorData && anchorData.isStarred !== undefined) {
+      // Use cached value
+      isStarred = anchorData.isStarred;
+    } else {
+      // Check storage
+      isStarred = await this.favoritesManager.isCurrentChatStarred(anchorId);
+      // Cache the value
+      if (anchorData) {
+        anchorData.isStarred = isStarred;
+      }
+    }
+
+    // Update star icon visual state
+    this.updateStarIconVisualState(isStarred);
+
+    // Get line position
+    const lineRect = line.getBoundingClientRect();
+    const starY = lineRect.top + (lineRect.height / 2);
+
+    // Initial positioning: position star to the right of tooltip (between tooltip and line)
+    // Tooltip right edge is at lineRect.left - 14px
+    // Star left edge should be at: lineRect.left - 14 + 4 = lineRect.left - 10 (4px gap)
+    // Star right edge should be at: lineRect.left - 10 + 12 = lineRect.left + 2
+    // Using right positioning: right = window.innerWidth - (lineRect.left + 2)
+    const starRightEdge = lineRect.left - 14 + 4 + 12; // tooltip right + 4px gap + star width
+    this.starIcon.style.right = `${window.innerWidth - starRightEdge}px`;
+    this.starIcon.style.top = `${starY}px`;
+    this.starIcon.style.transform = 'translateY(-50%)';
+
+    // Apply theme class
+    const theme = this.adapter.detectTheme();
+    this.starIcon.classList.toggle('scrollback-star-dark', theme === 'dark');
+    this.starIcon.classList.toggle('scrollback-star-light', theme === 'light');
+
+    // Show star icon
+    this.starIcon.classList.add('scrollback-star-visible');
+    this.starIcon.setAttribute('aria-hidden', 'false');
+    this.starIcon.setAttribute('tabindex', '0'); // Make keyboard accessible
+
+    // Refine positioning after tooltip is rendered to get exact tooltip right edge
+    // Wait a tick for tooltip to be rendered and measured
+    requestAnimationFrame(() => {
+      if (!this.tooltip || !this.starIcon) return;
+
+      const tooltipRect = this.tooltip.getBoundingClientRect();
+
+      // Position star to the right of tooltip's right edge with a gap
+      // Gap of 4px between tooltip right edge and star left edge
+      // Star left edge at: tooltipRect.right + 4
+      // Star right edge at: tooltipRect.right + 4 + 12 = tooltipRect.right + 16
+      // Using right positioning: right = window.innerWidth - (tooltipRect.right + 16)
+      const starRightEdge = tooltipRect.right + 4 + 12; // 4px gap + 12px star width
+      this.starIcon.style.right = `${window.innerWidth - starRightEdge}px`;
+    });
+  }
+
+  /**
+   * Hide star icon
+   */
+  hideStarIcon() {
+    if (!this.starIcon) return;
+
+    this.starIcon.classList.remove('scrollback-star-visible');
+    this.starIcon.setAttribute('aria-hidden', 'true');
+    this.starIcon.setAttribute('tabindex', '-1'); // Remove from keyboard navigation
+    this.currentStarAnchorId = null;
+  }
+
+  /**
+   * Update star icon visual state (filled/hollow)
+   * @param {boolean} isStarred - Whether star should be filled
+   */
+  updateStarIconVisualState(isStarred) {
+    if (!this.starIcon) return;
+
+    this.starIcon.innerHTML = this.getStarIconSVG(isStarred);
+    this.starIcon.classList.toggle('scrollback-star-filled', isStarred);
+    this.starIcon.setAttribute('aria-label', isStarred ? 'Remove from favorites' : 'Add to favorites');
+  }
+
+  /**
+   * Handle star icon click
+   */
+  async handleStarClick() {
+    if (!this.currentStarAnchorId || !this.favoritesManager) return;
+
+    const anchorId = this.currentStarAnchorId;
+    const anchorData = this.anchors.get(anchorId);
+
+    try {
+      // Toggle star status
+      const newStarredState = await this.favoritesManager.toggleCurrentChatStar(anchorId);
+
+      // Update cached state
+      if (anchorData) {
+        anchorData.isStarred = newStarredState;
+      }
+
+      // Update visual state
+      this.updateStarIconVisualState(newStarredState);
+    } catch (error) {
+      console.error('[AnchorUI] Error toggling star:', error);
+    }
+  }
+
+  /**
+   * Check star state for an anchor (async)
+   * @param {string} anchorId - Anchor ID
+   * @returns {Promise<boolean>} True if starred
+   */
+  async checkStarState(anchorId) {
+    if (!this.favoritesManager) return false;
+
+    try {
+      return await this.favoritesManager.isCurrentChatStarred(anchorId);
+    } catch (error) {
+      console.warn('[AnchorUI] Error checking star state:', error);
+      return false;
+    }
   }
 
 }

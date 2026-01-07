@@ -3,7 +3,9 @@
   "name": "Scrollback – Navigate ChatGPT & Claude Conversations",
   "version": "1.0",
   "description": "Instant navigation for long ChatGPT and Claude chats",
-  "permissions": [],
+  "permissions": [
+    "storage"
+  ],
   "host_permissions": [
     "https://chatgpt.com/*",
     "https://claude.ai/*"
@@ -22,6 +24,7 @@
         "src/platformRouter.js",
         "src/messageDetector.js",
         "src/anchorGenerator.js",
+        "src/favoritesManager.js",
         "src/anchorUI.js",
         "src/scrollNavigator.js",
         "src/anchorInjector.js",

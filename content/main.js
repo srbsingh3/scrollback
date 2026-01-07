@@ -197,7 +197,8 @@
         // Create component instances
         const messageDetector = new MessageDetector(adapter);
         const anchorGenerator = new AnchorGenerator();
-        const anchorUI = new AnchorUI(adapter);
+        const favoritesManager = new FavoritesManager(adapter);
+        const anchorUI = new AnchorUI(adapter, favoritesManager);
         const scrollNavigator = new ScrollNavigator(adapter);
         const anchorInjector = new AnchorInjector(adapter);
 
@@ -212,6 +213,7 @@
           injector: anchorInjector,
           detector: messageDetector,
           generator: anchorGenerator,
+          favoritesManager: favoritesManager,
           ui: anchorUI,
           navigator: scrollNavigator,
           adapter: adapter,

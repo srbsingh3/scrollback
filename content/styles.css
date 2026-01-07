@@ -136,7 +136,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  pointer-events: none; /* Don't interfere with mouse events */
+  pointer-events: auto; /* Allow hover events to keep tooltip visible */
   opacity: 0;
   /* transition: opacity 0.15s ease-in-out; */
   z-index: 10000; /* High z-index since it's a portal */
@@ -168,6 +168,108 @@ body.scrollback-platform-claude .scrollback-anchor-tooltip.scrollback-tooltip-li
 body.scrollback-platform-claude .scrollback-anchor-tooltip.scrollback-tooltip-dark {
   background-color: #141413 !important;
   color: #ffffff !important;
+}
+
+/* Star Icon (Portal-based, positioned between line and tooltip) */
+.scrollback-star-icon {
+  position: fixed;
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10001; /* Above tooltip */
+  transition: opacity 0.15s ease-in-out, transform 0.15s ease-in-out;
+  color: #9ca3af; /* Gray-400 - default color */
+}
+
+/* Show star when visible class is added */
+.scrollback-star-icon.scrollback-star-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Light Theme Star */
+.scrollback-star-icon.scrollback-star-light {
+  color: #9ca3af; /* Gray-400 */
+}
+
+.scrollback-star-icon.scrollback-star-light:hover {
+  color: #fbbf24; /* Amber-400 */
+  transform: translateY(-50%) scale(1.1);
+}
+
+.scrollback-star-icon.scrollback-star-light.scrollback-star-filled {
+  color: #fbbf24; /* Amber-400 - filled star */
+}
+
+.scrollback-star-icon.scrollback-star-light.scrollback-star-filled:hover {
+  color: #f59e0b; /* Amber-500 - darker on hover */
+  transform: translateY(-50%) scale(1.1);
+}
+
+/* Dark Theme Star */
+.scrollback-star-icon.scrollback-star-dark {
+  color: #6b7280; /* Gray-500 */
+}
+
+.scrollback-star-icon.scrollback-star-dark:hover {
+  color: #fbbf24; /* Amber-400 */
+  transform: translateY(-50%) scale(1.1);
+}
+
+.scrollback-star-icon.scrollback-star-dark.scrollback-star-filled {
+  color: #fbbf24; /* Amber-400 - filled star */
+}
+
+.scrollback-star-icon.scrollback-star-dark.scrollback-star-filled:hover {
+  color: #f59e0b; /* Amber-500 - darker on hover */
+  transform: translateY(-50%) scale(1.1);
+}
+
+/* Focus State for Star */
+.scrollback-star-icon:focus {
+  outline: 2px solid #3b82f6; /* Blue-500 */
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.scrollback-star-icon:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Active State for Star */
+.scrollback-star-icon:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+/* Ensure star icon SVG fills the container */
+.scrollback-star-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Reduced motion support for star */
+@media (prefers-reduced-motion: reduce) {
+  .scrollback-star-icon {
+    transition: none;
+  }
+
+  .scrollback-star-icon:hover {
+    transform: translateY(-50%);
+  }
+
+  .scrollback-star-icon:active {
+    transform: translateY(-50%);
+  }
 }
 
 /* Ensure lines don't interfere with text selection */
